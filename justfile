@@ -9,11 +9,11 @@ default:
 
 # Run desktop app in dev mode
 dev:
-    cd apps/desktop && npm run tauri dev
+    npm run tauri dev
 
 # Run frontend only (no Tauri)
 dev-ui:
-    cd apps/desktop && npm run dev
+    npm run dev
 
 # === Testing ===
 
@@ -39,13 +39,13 @@ fmt:
 
 # Run TypeScript checks
 lint-ui:
-    cd apps/desktop && npx tsc --noEmit
+    npx tsc --noEmit
 
 # === Build ===
 
 # Build release
 build:
-    cd apps/desktop && npm run tauri build
+    npm run tauri build
 
 # Check workspace compiles
 check:

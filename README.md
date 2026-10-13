@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Hubbub Desktop Banner](apps/desktop/src/assets/hero.png)
+![Hubbub Desktop Banner](src/assets/hero.png)
 
 ### The Privacy-First Multi-Agent Desktop AI Workspace
 
@@ -110,14 +110,12 @@ git clone https://github.com/thanghn14/hubbub-chat.git
 cd hubbub-chat
 
 # 2. Cài đặt dependencies cho ứng dụng Desktop
-cd apps/desktop
 npm install
-cd ../..
 
 # 3. Khởi chạy chế độ phát triển (Dev Mode)
 just dev
 # Hoặc chạy lệnh trực tiếp nếu không cài just:
-# cargo tauri dev --manifest-path apps/desktop/src-tauri/Cargo.toml
+# cargo tauri dev --manifest-path src-tauri/Cargo.toml
 ```
 
 ### Kiểm thử & Đóng gói (Testing & Building)

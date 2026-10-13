@@ -2,11 +2,13 @@
 /target/
 **/*.rs.bk
 Cargo.lock
-!apps/desktop/src-tauri/Cargo.lock
+!src-tauri/Cargo.lock
 
 # Node
 node_modules/
 dist/
+dist-ssr/
+*.local
 .vite/
 *.tsbuildinfo
 
@@ -15,6 +17,8 @@ dist/
 .vscode/
 *.swp
 *.swo
+*.suo
+*.sln
 *~
 
 # OS
@@ -23,7 +27,7 @@ Thumbs.db
 Desktop.ini
 
 # Tauri
-apps/desktop/src-tauri/target/
+src-tauri/target/
 
 # Logs
 *.log

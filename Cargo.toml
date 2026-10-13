@@ -12,7 +12,7 @@ members = [
     "crates/vault",
     "crates/app",
     "crates/testkit",
-    "apps/desktop/src-tauri",
+    "src-tauri",
 ]
 
 [workspace.package]
