@@ -2,11 +2,13 @@
 
 <div align="center">
 
-![Hubbub Desktop Banner](apps/web/src/assets/hero.png)
+![Hubbub Desktop Banner](apps/desktop/src/assets/hero.png)
 
 ### The Privacy-First Multi-Agent Desktop AI Workspace
 
-[![Release](https://img.shields.io/badge/release-v0.1.0-6366f1.svg?style=flat-square)](https://github.com/thanghn14/hubbub-chat)
+Landing page: [thanghn14/hubbub-chat-landing](https://github.com/thanghn14/hubbub-chat-landing)
+
+[![Release](https://img.shields.io/badge/release-v0.1.0-6366f1.svg?style=flat-square)](https://github.com/thanghn14/hubbub-chat/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-0284c7.svg?style=flat-square)](https://tauri.app)
 [![Rust](https://img.shields.io/badge/rust-2021%20edition-orange.svg?style=flat-square)](https://www.rust-lang.org)
 [![Tauri](https://img.shields.io/badge/tauri-v2.12-24c8db.svg?style=flat-square)](https://tauri.app)
