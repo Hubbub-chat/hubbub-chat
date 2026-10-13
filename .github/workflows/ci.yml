@@ -28,11 +28,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: apps/desktop/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install frontend dependencies
         run: npm ci
-        working-directory: apps/desktop
 
       - name: Rust format check
         run: cargo fmt --all -- --check
@@ -45,7 +44,6 @@ jobs:
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
-        working-directory: apps/desktop
 
   # security:
   #   name: Security Audit

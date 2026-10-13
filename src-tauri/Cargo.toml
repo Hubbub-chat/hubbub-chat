@@ -16,8 +16,8 @@ workspace = true
 tauri-build = { version = "2.7", features = [] }
 
 [dependencies]
-hubbub-app = { path = "../../../crates/app" }
-hubbub-domain = { path = "../../../crates/domain" }
+hubbub-app = { path = "../crates/app" }
+hubbub-domain = { path = "../crates/domain" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

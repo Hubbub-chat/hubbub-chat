@@ -559,34 +559,32 @@ hubbub/
 │   └── testkit/                      # Shared test utilities
 │       └── src/                      # FakeLlm, record/replay cassettes, tmp workspace, fixtures
 │
-├── apps/
-│   └── desktop/                      # Tauri 2 app
-│       ├── src-tauri/                # Rust (Tauri commands, lifecycle)
-│       │   ├── src/
-│       │   │   ├── commands/         # IPC command handlers
-│       │   │   └── main.rs           # App entry
-│       │   ├── tauri.conf.json
-│       │   ├── capabilities/         # Tauri permission configs
-│       │   └── Cargo.toml
-│       │
-│       ├── src/                      # React UI
-│       │   ├── app/                  # Router, theme, providers, shell layout
-│       │   ├── components/
-│       │   │   ├── layout/           # Shell, Sidebar, SplitView
-│       │   │   ├── chat/             # MessageList, MessageBubble, Composer, StreamRenderer
-│       │   │   ├── agents/           # AgentList, AgentConfig, AgentCard
-│       │   │   ├── files/            # FileTree, MilkdownEditor, BreadCrumb, SearchBar
-│       │   │   ├── runs/             # RunInspector, StepTimeline, TokenUsage
-│       │   │   └── settings/         # ProviderConfig, WorkspaceConfig, SecurityConfig
-│       │   ├── hooks/                # useChatStream, useAgents, useDocuments, useRuns
-│       │   ├── stores/               # Zustand stores
-│       │   ├── services/             # Tauri IPC wrappers
-│       │   └── types/                # TypeScript types (mirror Rust domain entities)
-│       │
-│       ├── package.json
-│       ├── tsconfig.json
-│       ├── vite.config.ts
-│       └── tailwind.config.ts
+├── src-tauri/                        # Tauri 2 shell (Rust: commands, lifecycle)
+│   ├── src/
+│   │   ├── commands/                 # IPC command handlers
+│   │   └── main.rs                   # App entry
+│   ├── tauri.conf.json
+│   ├── capabilities/                 # Tauri permission configs
+│   └── Cargo.toml
+│
+├── src/                              # React UI
+│   ├── app/                          # Router, theme, providers, shell layout
+│   ├── components/
+│   │   ├── layout/                   # Shell, Sidebar, SplitView
+│   │   ├── chat/                     # MessageList, MessageBubble, Composer, StreamRenderer
+│   │   ├── agents/                   # AgentList, AgentConfig, AgentCard
+│   │   ├── files/                    # FileTree, MilkdownEditor, BreadCrumb, SearchBar
+│   │   ├── runs/                     # RunInspector, StepTimeline, TokenUsage
+│   │   └── settings/                 # ProviderConfig, WorkspaceConfig, SecurityConfig
+│   ├── hooks/                        # useChatStream, useAgents, useDocuments, useRuns
+│   ├── stores/                       # Zustand stores
+│   ├── services/                     # Tauri IPC wrappers
+│   └── types/                        # TypeScript types (mirror Rust domain entities)
+│
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── tailwind.config.ts
 │
 └── resources/
     └── agents/                       # Agent mặc định, seed vào Workspace lần chạy đầu
