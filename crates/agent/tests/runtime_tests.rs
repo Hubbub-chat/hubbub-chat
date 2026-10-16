@@ -8,7 +8,7 @@ use uuid::Uuid;
 use hubbub_agent::{AgentError, AgentRuntime};
 use hubbub_domain::entities::conversation::MessageRole;
 use hubbub_domain::entities::run::{RunStatus, StepKind, StepStatus};
-use hubbub_domain::ports::llm::{LlmChunk, LlmUsage, ToolSchema};
+use hubbub_domain::ports::llm::{LlmChunk, LlmUsage, ToolCall, ToolSchema};
 use hubbub_domain::ports::store::Store;
 use hubbub_domain::ports::tool_host::ToolResult;
 use hubbub_store::SqliteStore;
@@ -551,4 +551,93 @@ async fn test_vietnamese_diacritics_and_emojis() {
     // Verify store has exact prompt and answer with diacritics and emojis
     let messages = store.list_messages(conv_id, 10, 0).await.unwrap();
     assert_eq!(messages.len(), 2);
+}
+
+#[tokio::test]
+async fn test_cancel_mid_tool_batch_keeps_conversation_usable() {
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    let event_sink = Arc::new(InMemoryEventSink::new());
+    let tool_host = Arc::new(MockToolHost::new());
+
+    tool_host
+        .register_tool(
+            ToolSchema {
+                name: "slow_tool".to_string(),
+                description: "Takes time".to_string(),
+                parameters: serde_json::json!({}),
+            },
+            Some(Duration::from_millis(800)),
+            |_args, _ctx| {
+                Ok(ToolResult {
+                    success: true,
+                    content: "Done slow".to_string(),
+                    metadata: None,
+                })
+            },
+        )
+        .await;
+
+    // One LLM response asking for two tools; the run is cancelled during the first
+    fake_llm
+        .push_response(FakeResponse {
+            chunks: vec![
+                Ok(LlmChunk::ToolCall(ToolCall::new(
+                    "call_a",
+                    "slow_tool",
+                    "{}",
+                ))),
+                Ok(LlmChunk::ToolCall(ToolCall::new(
+                    "call_b",
+                    "slow_tool",
+                    "{}",
+                ))),
+                Ok(LlmChunk::Done),
+            ],
+            chunk_delay: None,
+        })
+        .await;
+    fake_llm.push_text_deltas(&["Tiếp tục."], None).await;
+
+    let runtime = AgentRuntime::new(
+        store.clone(),
+        fake_llm.clone(),
+        tool_host.clone(),
+        event_sink.clone(),
+        None,
+    );
+    let mut agent = create_test_agent("test-agent", "Tool agent.");
+    agent.tools.builtin.push("slow_tool".to_string());
+    let conv_id = Uuid::now_v7();
+
+    let cancel = CancellationToken::new();
+    let cancel_clone = cancel.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        cancel_clone.cancel();
+    });
+    let result = runtime
+        .execute_run(conv_id, &agent, Some("Chạy hai tool"), cancel)
+        .await;
+    assert!(matches!(result, Err(AgentError::Cancelled)));
+
+    // Next message in the same conversation
+    let run = runtime
+        .execute_run(conv_id, &agent, Some("Tiếp"), CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(run.status, RunStatus::Completed);
+
+    // Providers reject an assistant tool call that has no matching tool result
+    let calls = fake_llm.get_recorded_calls().await;
+    let messages = &calls.last().unwrap().messages;
+    for (i, m) in messages.iter().enumerate() {
+        for tc in m.tool_calls.iter().flatten() {
+            let answered = messages[i + 1..]
+                .iter()
+                .take_while(|n| n.role == "tool")
+                .any(|n| n.tool_call_id.as_deref() == Some(tc.id.as_str()));
+            assert!(answered, "tool call {} has no result", tc.id);
+        }
+    }
 }

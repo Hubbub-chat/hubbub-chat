@@ -119,6 +119,8 @@ impl ContextBuilder {
             }
         }
 
+        let mut messages = Self::pair_tool_results(messages);
+
         // 3. New User Prompt (if provided)
         if let Some(prompt) = current_prompt.filter(|p| !p.is_empty()) {
             if let Some(last) = messages.last_mut().filter(|m| m.role == "user") {
@@ -137,5 +139,88 @@ impl ContextBuilder {
         }
 
         messages
+    }
+
+    /// Providers reject history where an assistant tool call has no result right after it,
+    /// or a tool result answers no call. A run cancelled or failed mid-batch leaves exactly
+    /// that, so fill missing results and drop orphans instead of breaking the conversation.
+    fn pair_tool_results(messages: Vec<LlmMessage>) -> Vec<LlmMessage> {
+        let mut out = Vec::with_capacity(messages.len());
+        let mut pending: Vec<String> = Vec::new();
+
+        for msg in messages {
+            if msg.role == "tool" {
+                let answered = msg
+                    .tool_call_id
+                    .as_ref()
+                    .and_then(|id| pending.iter().position(|p| p == id));
+                if let Some(idx) = answered {
+                    pending.remove(idx);
+                    out.push(msg);
+                }
+                continue;
+            }
+            Self::fill_missing_results(&mut out, &mut pending);
+            if let Some(calls) = &msg.tool_calls {
+                pending = calls.iter().map(|c| c.id.clone()).collect();
+            }
+            out.push(msg);
+        }
+        Self::fill_missing_results(&mut out, &mut pending);
+        out
+    }
+
+    fn fill_missing_results(out: &mut Vec<LlmMessage>, pending: &mut Vec<String>) {
+        for id in pending.drain(..) {
+            out.push(LlmMessage {
+                role: "tool".to_string(),
+                content: "Tool call was cancelled before it produced a result.".to_string(),
+                tool_calls: None,
+                tool_call_id: Some(id),
+            });
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn msg(role: &str, calls: Option<Vec<&str>>, call_id: Option<&str>) -> LlmMessage {
+        LlmMessage {
+            role: role.to_string(),
+            content: String::new(),
+            tool_calls: calls.map(|ids| {
+                ids.into_iter()
+                    .map(|id| ToolCall::new(id, "t", "{}"))
+                    .collect()
+            }),
+            tool_call_id: call_id.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn pairs_every_tool_call_and_drops_orphan_results() {
+        let out = ContextBuilder::pair_tool_results(vec![
+            msg("user", None, None),
+            msg("tool", None, Some("orphan")),
+            msg("assistant", Some(vec!["a", "b"]), None),
+            msg("tool", None, Some("b")),
+            msg("user", None, None),
+        ]);
+        let shape: Vec<_> = out
+            .iter()
+            .map(|m| (m.role.as_str(), m.tool_call_id.as_deref()))
+            .collect();
+        assert_eq!(
+            shape,
+            vec![
+                ("user", None),
+                ("assistant", None),
+                ("tool", Some("b")),
+                ("tool", Some("a")),
+                ("user", None),
+            ]
+        );
     }
 }

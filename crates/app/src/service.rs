@@ -25,6 +25,7 @@ use hubbub_workspace::LocalWorkspaceService;
 use crate::config::AppConfig;
 use crate::errors::AppError;
 use crate::report_service::ReportService;
+use crate::run_guard::ActiveConversations;
 use crate::seed::default_agents;
 
 pub struct AppService {
@@ -36,6 +37,7 @@ pub struct AppService {
     reports: Arc<ReportService>,
     agents: Arc<RwLock<HashMap<String, Agent>>>,
     active_cancellations: Arc<Mutex<HashMap<Uuid, CancellationToken>>>,
+    active_conversations: ActiveConversations,
 }
 
 impl AppService {
@@ -72,6 +74,7 @@ impl AppService {
             reports,
             agents: Arc::new(RwLock::new(map)),
             active_cancellations: Arc::new(Mutex::new(HashMap::new())),
+            active_conversations: ActiveConversations::default(),
         }
     }
 
@@ -128,6 +131,7 @@ impl AppService {
             reports,
             agents: Arc::new(RwLock::new(map)),
             active_cancellations: Arc::new(Mutex::new(HashMap::new())),
+            active_conversations: ActiveConversations::default(),
         })
     }
 
@@ -286,6 +290,15 @@ impl AppService {
         prompt: &str,
         event_sink: Arc<dyn EventSink>,
     ) -> Result<Run, AppError> {
+        let _conversation_guard = self
+            .active_conversations
+            .try_acquire(conversation_id)
+            .ok_or_else(|| {
+                AppError::Agent(
+                    "Cuộc trò chuyện này đang có một lượt trả lời chưa hoàn tất. Vui lòng chờ hoặc dừng lượt đó trước.".to_string(),
+                )
+            })?;
+
         // 1. Resolve agent
         let agent_slug = agent_id.unwrap_or_else(|| self.config.default_agent.clone());
         let agent = self.get_agent(&agent_slug).await.ok_or_else(|| {
