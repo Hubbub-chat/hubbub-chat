@@ -785,3 +785,20 @@ async fn test_list_recent_messages_returns_newest_in_chronological_order() {
         .collect();
     assert_eq!(texts, vec!["tin 2", "tin 3", "tin 4"]);
 }
+
+#[test]
+fn test_migration_files_use_lf_line_endings() {
+    // sqlx stores a checksum of each migration's exact bytes. A Windows checkout with
+    // core.autocrlf rewrites them as CRLF, and an existing database then refuses to start
+    // ("migration 1 was previously applied but has been modified"). .gitattributes pins LF.
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
+    for entry in std::fs::read_dir(&dir).unwrap() {
+        let path = entry.unwrap().path();
+        let bytes = std::fs::read(&path).unwrap();
+        assert!(
+            !bytes.contains(&b'\r'),
+            "{} has CRLF line endings",
+            path.display()
+        );
+    }
+}
