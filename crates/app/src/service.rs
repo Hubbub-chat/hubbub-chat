@@ -5,7 +5,7 @@ use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-use hubbub_agent::AgentRuntime;
+use hubbub_agent::{AgentError, AgentRuntime};
 use hubbub_domain::entities::agent::Agent;
 use hubbub_domain::entities::audit_log::AuditLog;
 use hubbub_domain::entities::conversation::{Conversation, Message};
@@ -373,7 +373,16 @@ impl AppService {
             active.remove(&run_id);
         }
 
-        exec_result.map_err(|e| AppError::Agent(e.to_string()))
+        match exec_result {
+            Ok(run) => Ok(run),
+            // A cancel the user asked for is a normal outcome, not an error to show
+            Err(AgentError::Cancelled) => self
+                .store
+                .get_run(run_id)
+                .await?
+                .ok_or_else(|| AppError::NotFound(format!("Run {run_id}"))),
+            Err(e) => Err(AppError::Agent(e.to_string())),
+        }
     }
 
     pub async fn cancel_run(&self, run_id: Uuid) -> Result<bool, AppError> {

@@ -215,15 +215,18 @@ export default function App() {
         console.error('Failed to send message:', err);
         // The user may have moved to another conversation meanwhile; leave that view alone
         if (activeConversationIdRef.current === sentConversationId) {
-          setIsStreaming(false);
-          trackRun(null);
           setErrorMsg(String(err));
+          // A tracked run gets its RunFinished event (IPC reply and events can arrive in
+          // either order), which reloads messages; only clean up here if there is none
+          if (activeRunIdRef.current === null) {
+            setIsStreaming(false);
+          }
         }
       } finally {
         isSendingRef.current = false;
       }
     },
-    [activeConversationId, selectedAgentId, isStreaming, trackRun]
+    [activeConversationId, selectedAgentId, isStreaming]
   );
 
   // Handle cancelling a run; the RunFinished("cancelled") event does the cleanup
