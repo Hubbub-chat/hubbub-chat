@@ -20,6 +20,18 @@ use hubbub_policy::{PathGuard, PermissionChecker, PolicyError, UrlGuard};
 
 use crate::errors::AgentError;
 
+/// Builtin tools that have a branch in `ToolRunner::check_policy`. Any other builtin
+/// name is denied at run time and rejected when an agent definition is saved.
+pub const BUILTIN_TOOLS: &[&str] = &[
+    "web_search",
+    "web_fetch",
+    "fs_read",
+    "fs_list",
+    "report_write",
+    "report_read",
+    "report_list",
+];
+
 pub struct ToolRunner<'a> {
     pub store: &'a Arc<dyn Store>,
     pub tool_host: &'a Arc<dyn ToolHost>,

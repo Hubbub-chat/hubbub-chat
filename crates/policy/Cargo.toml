@@ -15,5 +15,6 @@ ipnet = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+hubbub-testkit = { path = "../testkit" }
 tempfile = { workspace = true }
 

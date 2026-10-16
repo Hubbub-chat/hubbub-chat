@@ -31,4 +31,7 @@ pub enum PolicyError {
         operation: String,
         reason: String,
     },
+
+    #[error("Invalid agent definition '{agent_id}': {reason}")]
+    InvalidAgent { agent_id: String, reason: String },
 }

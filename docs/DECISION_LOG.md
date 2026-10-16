@@ -5,6 +5,16 @@ Sắp xếp theo thứ tự thời gian (mới nhất ở trên).
 
 > **QUY TẮC:** PR/commit có thay đổi quan trọng mà KHÔNG cập nhật file này sẽ bị reject.
 
+## [2026-10-16] Bật CSP cho webview, kiểm tra định nghĩa agent khi lưu
+
+**Bối cảnh:** `tauri.conf.json` có `"csp": null` trong khi UI render nội dung do LLM sinh ra (kể cả từ trang web bị prompt injection). `upsert_agent` nhận mọi `Agent` từ webview mà không kiểm tra.
+
+**Quyết định:**
+1. CSP production: `script-src 'self'` (bản build chỉ có một module script), `connect-src` chỉ IPC, `img-src` chỉ `'self' data: blob: asset:` (ảnh markdown từ URL ngoài **không hiển thị**, chặn kênh rò rỉ dữ liệu qua ảnh), `style-src 'unsafe-inline'` vì virtual list và component dùng `style={{}}`. `devCsp` riêng cho Vite dev server (`localhost:5173`, HMR websocket).
+2. `AgentValidator` (crate `policy`, thuần): id `[a-z0-9_-]{1,64}`, builtin tool phải nằm trong `hubbub_agent::BUILTIN_TOOLS` (cùng danh sách có nhánh trong `check_policy`), pattern quyền không được traversal/tuyệt đối/ổ đĩa, không chạm `data/`; `fs_write` không được `**`/`*` hay đường dẫn được bảo vệ.
+
+**Chưa kiểm chứng tự động:** CSP chỉ kiểm tra được khi chạy app (`just dev`, `just build`).
+
 ## [2026-10-16] Policy công cụ: mặc định từ chối, cấm truy cập `data/`
 
 **Bối cảnh:**

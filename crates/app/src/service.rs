@@ -5,7 +5,7 @@ use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-use hubbub_agent::{AgentError, AgentRuntime};
+use hubbub_agent::{AgentError, AgentRuntime, BUILTIN_TOOLS};
 use hubbub_domain::entities::agent::Agent;
 use hubbub_domain::entities::audit_log::AuditLog;
 use hubbub_domain::entities::conversation::{Conversation, Message};
@@ -17,6 +17,7 @@ use hubbub_domain::ports::secret_store::SecretStore;
 use hubbub_domain::ports::store::Store;
 use hubbub_domain::ports::tool_host::ToolHost;
 use hubbub_domain::ports::workspace_service::WorkspaceService;
+use hubbub_policy::AgentValidator;
 use hubbub_store::SqliteStore;
 use hubbub_tools::BuiltinToolHost;
 use hubbub_vault::KeyringVault;
@@ -235,6 +236,9 @@ impl AppService {
     }
 
     pub async fn upsert_agent(&self, agent: Agent) -> Result<(), AppError> {
+        // Definitions come from the webview; reject ones that could never be safe
+        AgentValidator::validate(&agent, BUILTIN_TOOLS)
+            .map_err(|e| AppError::Config(e.to_string()))?;
         {
             let mut map = self.agents.write().await;
             map.insert(agent.id.clone(), agent);

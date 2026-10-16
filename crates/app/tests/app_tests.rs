@@ -366,3 +366,35 @@ fn test_default_agents_have_permissions_for_their_tools() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_upsert_agent_rejects_unsafe_definitions() {
+    let service = AppService::new(
+        AppConfig::default(),
+        Arc::new(SqliteStore::open_in_memory().await.unwrap()),
+        Arc::new(InMemoryVault::new()),
+        Arc::new(MockToolHost::new()),
+    );
+    let base = service.get_agent("analyst").await.unwrap();
+
+    let mut write_everywhere = base.clone();
+    write_everywhere.id = "writes_everywhere".to_string();
+    write_everywhere.permissions.fs_write = vec!["**".to_string()];
+    assert!(service.upsert_agent(write_everywhere).await.is_err());
+
+    let mut reads_db = base.clone();
+    reads_db.id = "reads_db".to_string();
+    reads_db.permissions.fs_read = vec!["data/**".to_string()];
+    assert!(service.upsert_agent(reads_db).await.is_err());
+
+    assert!(service.get_agent("writes_everywhere").await.is_none());
+    assert!(service.get_agent("reads_db").await.is_none());
+}
+
+#[test]
+fn test_default_agents_pass_validation() {
+    for agent in hubbub_app::default_agents() {
+        hubbub_policy::AgentValidator::validate(&agent, hubbub_agent::BUILTIN_TOOLS)
+            .unwrap_or_else(|e| panic!("{}: {e}", agent.id));
+    }
+}

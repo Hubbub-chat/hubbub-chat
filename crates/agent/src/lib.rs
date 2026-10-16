@@ -15,4 +15,4 @@ pub use context::ContextBuilder;
 pub use errors::AgentError;
 pub use llm_runner::LlmRunner;
 pub use runtime::AgentRuntime;
-pub use tool_runner::ToolRunner;
+pub use tool_runner::{BUILTIN_TOOLS, ToolRunner};
