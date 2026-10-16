@@ -77,7 +77,24 @@ impl AgentRuntime {
             .await?;
         let mut run = self.init_run(conversation_id, agent, run_id).await?;
 
-        let history = self.store.list_messages(conversation_id, 1000, 0).await?;
+        // Every exit path past this point must leave the run in a terminal state
+        match self.run_loop(&mut run, agent, &cancellation_token).await {
+            Ok(()) => Ok(run),
+            Err(AgentError::Cancelled) => self.handle_cancelled(&mut run).await,
+            Err(e) => self.fail_run(&mut run, e).await,
+        }
+    }
+
+    async fn run_loop(
+        &self,
+        run: &mut Run,
+        agent: &Agent,
+        cancellation_token: &CancellationToken,
+    ) -> Result<(), AgentError> {
+        let history = self
+            .store
+            .list_messages(run.conversation_id, 1000, 0)
+            .await?;
         let mut working_messages = ContextBuilder::build(agent, &history, None);
         let active_tools = self.resolve_active_tools(agent);
 
@@ -94,10 +111,7 @@ impl AgentRuntime {
 
         loop {
             if cancellation_token.is_cancelled() {
-                return self.handle_cancelled(&mut run).await;
-            }
-            if let Err(e) = budget.check_limits() {
-                return self.handle_budget_exceeded(&mut run, e).await;
+                return Err(AgentError::Cancelled);
             }
             budget.record_step()?;
             step_idx += 1;
@@ -108,38 +122,35 @@ impl AgentRuntime {
                 working_messages: &working_messages,
                 active_tools: &active_tools,
                 step_idx,
-                cancellation_token: &cancellation_token,
+                cancellation_token,
             };
 
             let (text, tool_calls, p_tok, c_tok) =
-                match llm_runner.run_step(step_params, &mut budget).await {
-                    Ok(res) => res,
-                    Err(AgentError::Cancelled) => {
-                        return self.handle_cancelled(&mut run).await;
-                    }
-                    Err(e) => return Err(e),
-                };
+                llm_runner.run_step(step_params, &mut budget).await?;
 
             total_prompt_tokens += p_tok;
             total_completion_tokens += c_tok;
 
             if tool_calls.is_empty() {
-                self.finish_run(&mut run, text, total_prompt_tokens, total_completion_tokens)
-                    .await?;
-                return Ok(run);
+                // Keep the answer even if it pushed us over the token budget: it was already streamed
+                self.append_assistant_text(run, text).await?;
+                budget.check_token_limit()?;
+                return self
+                    .complete_run(run, total_prompt_tokens, total_completion_tokens)
+                    .await;
             }
 
-            self.handle_assistant_tool_calls(&mut run, &mut working_messages, &text, &tool_calls)
+            self.handle_assistant_tool_calls(run, &mut working_messages, &text, &tool_calls)
                 .await?;
 
             step_idx = self
                 .execute_tool_calls_batch(
-                    &mut run,
+                    run,
                     agent,
                     &mut working_messages,
                     &tool_calls,
                     step_idx,
-                    &cancellation_token,
+                    cancellation_token,
                 )
                 .await?;
         }
@@ -208,13 +219,7 @@ impl AgentRuntime {
             .collect()
     }
 
-    async fn finish_run(
-        &self,
-        run: &mut Run,
-        text: String,
-        p_tokens: u64,
-        c_tokens: u64,
-    ) -> Result<(), AgentError> {
+    async fn append_assistant_text(&self, run: &Run, text: String) -> Result<(), AgentError> {
         let assistant_msg = Message {
             id: Uuid::now_v7(),
             conversation_id: run.conversation_id,
@@ -224,7 +229,15 @@ impl AgentRuntime {
             created_at: Utc::now(),
         };
         self.store.append_message(&assistant_msg).await?;
+        Ok(())
+    }
 
+    async fn complete_run(
+        &self,
+        run: &mut Run,
+        p_tokens: u64,
+        c_tokens: u64,
+    ) -> Result<(), AgentError> {
         run.status = RunStatus::Completed;
         run.finished_at = Some(Utc::now());
         run.usage = Some(UsageInfo {
@@ -234,12 +247,14 @@ impl AgentRuntime {
         });
         self.store.update_run(run).await?;
 
-        self.event_sink
+        // Best-effort: the run is already stored as completed, a closed window must not undo that
+        let _ = self
+            .event_sink
             .emit(RunEvent::RunFinished {
                 run_id: run.id.to_string(),
                 status: "completed".to_string(),
             })
-            .await?;
+            .await;
 
         Ok(())
     }
@@ -304,7 +319,7 @@ impl AgentRuntime {
 
         for tc in tool_calls {
             step_idx += 1;
-            let msg = match runner
+            let msg = runner
                 .execute_tool_call(
                     run.id,
                     run.conversation_id,
@@ -313,14 +328,7 @@ impl AgentRuntime {
                     step_idx,
                     cancellation_token,
                 )
-                .await
-            {
-                Ok(m) => m,
-                Err(AgentError::Cancelled) => {
-                    return self.handle_cancelled(run).await.map(|_| unreachable!());
-                }
-                Err(e) => return Err(e),
-            };
+                .await?;
 
             working_messages.push(msg);
         }
@@ -344,11 +352,9 @@ impl AgentRuntime {
         Err(AgentError::Cancelled)
     }
 
-    async fn handle_budget_exceeded(
-        &self,
-        run: &mut Run,
-        err: AgentError,
-    ) -> Result<Run, AgentError> {
+    /// Mark the run failed and notify the UI. Store/emit errors are ignored so the
+    /// original error is the one returned.
+    async fn fail_run(&self, run: &mut Run, err: AgentError) -> Result<Run, AgentError> {
         run.status = RunStatus::Failed;
         run.finished_at = Some(Utc::now());
         let _ = self.store.update_run(run).await;

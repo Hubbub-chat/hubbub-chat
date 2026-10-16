@@ -118,6 +118,12 @@ impl Store for SqliteStore {
             .map_err(Into::into)
     }
 
+    async fn fail_interrupted_runs(&self) -> Result<u64, DomainError> {
+        repositories::run::fail_interrupted_runs(&self.pool)
+            .await
+            .map_err(Into::into)
+    }
+
     // --- Steps ---
 
     async fn create_step(&self, step: &Step) -> Result<(), DomainError> {

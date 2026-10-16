@@ -269,10 +269,11 @@ async fn test_budget_max_tokens_exceeded() {
     agent.budget.max_tokens = 500; // Limit is 500
 
     let conv_id = Uuid::now_v7();
+    let run_id = Uuid::now_v7();
     let cancel = CancellationToken::new();
 
     let result = runtime
-        .execute_run(conv_id, &agent, Some("Tin nhắn"), cancel)
+        .execute_run_with_id(conv_id, &agent, Some("Tin nhắn"), cancel, Some(run_id))
         .await;
 
     assert!(result.is_err());
@@ -282,6 +283,61 @@ async fn test_budget_max_tokens_exceeded() {
         }
         other => panic!("Expected BudgetExceeded, got: {:?}", other),
     }
+
+    // The answer was already streamed to the UI, so it must be kept, and the run finalized
+    let run = store.get_run(run_id).await.unwrap().unwrap();
+    assert_eq!(run.status, RunStatus::Failed);
+    assert!(run.finished_at.is_some());
+    assert!(event_sink.has_finished_status("failed").await);
+    let messages = store.list_messages(conv_id, 10, 0).await.unwrap();
+    assert_eq!(messages.len(), 2);
+    assert_eq!(messages[1].role, MessageRole::Assistant);
+}
+
+#[tokio::test]
+async fn test_llm_stream_error_marks_run_failed() {
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    let event_sink = Arc::new(InMemoryEventSink::new());
+    let tool_host = Arc::new(MockToolHost::new());
+
+    fake_llm
+        .push_response(FakeResponse {
+            chunks: vec![
+                Ok(LlmChunk::Delta("Đang trả lời".to_string())),
+                Err(hubbub_domain::errors::DomainError::Internal(
+                    "connection reset".to_string(),
+                )),
+            ],
+            chunk_delay: None,
+        })
+        .await;
+
+    let runtime = AgentRuntime::new(
+        store.clone(),
+        fake_llm.clone(),
+        tool_host.clone(),
+        event_sink.clone(),
+        None,
+    );
+    let agent = create_test_agent("test-agent", "Agent.");
+    let run_id = Uuid::now_v7();
+
+    let result = runtime
+        .execute_run_with_id(
+            Uuid::now_v7(),
+            &agent,
+            Some("Xin chào"),
+            CancellationToken::new(),
+            Some(run_id),
+        )
+        .await;
+
+    assert!(result.is_err());
+    let run = store.get_run(run_id).await.unwrap().unwrap();
+    assert_eq!(run.status, RunStatus::Failed);
+    assert!(run.finished_at.is_some());
+    assert!(event_sink.has_finished_status("failed").await);
 }
 
 #[tokio::test]

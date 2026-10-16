@@ -85,6 +85,8 @@ impl AppService {
         let db_path = data_dir.join("hubbub.db");
         let db_str = db_path.to_string_lossy().to_string();
         let store = Arc::new(SqliteStore::open(&db_str).await?);
+        // Runs still `running` at startup belong to a process that died; nothing will finish them
+        store.fail_interrupted_runs().await?;
         let vault = Arc::new(KeyringVault::new("hubbub"));
 
         let workspace = Arc::new(LocalWorkspaceService::new(&config.workspace_dir));

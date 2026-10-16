@@ -39,6 +39,11 @@ impl BudgetTracker {
             )));
         }
 
+        self.check_token_limit()
+    }
+
+    /// Token check alone, for after a step finished (the step limit is about starting the next one).
+    pub fn check_token_limit(&self) -> Result<(), AgentError> {
         if self.budget.max_tokens > 0 && self.tokens_used >= self.budget.max_tokens {
             return Err(AgentError::BudgetExceeded(format!(
                 "Max tokens exceeded: {} >= limit {}",
@@ -55,9 +60,10 @@ impl BudgetTracker {
         Ok(())
     }
 
-    pub fn record_usage(&mut self, usage: &LlmUsage) -> Result<(), AgentError> {
+    /// Usage arrives mid-stream; it is only recorded here and enforced between steps,
+    /// so an answer that was already streamed is never thrown away.
+    pub fn record_usage(&mut self, usage: &LlmUsage) {
         self.tokens_used += usage.prompt_tokens + usage.completion_tokens;
-        self.check_limits()
     }
 
     pub fn steps_taken(&self) -> u32 {

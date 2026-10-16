@@ -28,6 +28,8 @@ pub trait Store: Send + Sync {
     async fn create_run(&self, run: &Run) -> Result<(), DomainError>;
     async fn update_run(&self, run: &Run) -> Result<(), DomainError>;
     async fn get_run(&self, id: Uuid) -> Result<Option<Run>, DomainError>;
+    /// Mark runs left `queued`/`running` by a previous process as failed. Returns how many.
+    async fn fail_interrupted_runs(&self) -> Result<u64, DomainError>;
 
     // Steps
     async fn create_step(&self, step: &Step) -> Result<(), DomainError>;

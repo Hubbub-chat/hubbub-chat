@@ -689,3 +689,54 @@ async fn test_model_usage_stats_aggregation() {
     assert_eq!(stat.rpd_limit, 1500);
     assert!(stat.is_free_tier);
 }
+
+#[tokio::test]
+async fn test_fail_interrupted_runs() {
+    let store = SqliteStore::open_in_memory().await.expect("open");
+    let conv_id = Uuid::now_v7();
+    let now = Utc::now();
+    store
+        .create_conversation(&Conversation {
+            id: conv_id,
+            title: "Interrupted".to_string(),
+            agent_id: "researcher".to_string(),
+            created_at: now,
+            updated_at: now,
+            archived: false,
+        })
+        .await
+        .expect("create conv");
+
+    let make_run = |status: RunStatus| Run {
+        id: Uuid::now_v7(),
+        conversation_id: conv_id,
+        agent_id: "researcher".to_string(),
+        parent_run_id: None,
+        status,
+        usage: None,
+        cost_usd: None,
+        started_at: now,
+        finished_at: None,
+    };
+    let running = make_run(RunStatus::Running);
+    let queued = make_run(RunStatus::Queued);
+    let completed = make_run(RunStatus::Completed);
+    for run in [&running, &queued, &completed] {
+        store.create_run(run).await.expect("create run");
+    }
+
+    let count = store.fail_interrupted_runs().await.expect("sweep");
+    assert_eq!(count, 2);
+
+    for id in [running.id, queued.id] {
+        let run = store.get_run(id).await.expect("get").expect("exists");
+        assert_eq!(run.status, RunStatus::Failed);
+        assert!(run.finished_at.is_some());
+    }
+    let run = store
+        .get_run(completed.id)
+        .await
+        .expect("get")
+        .expect("exists");
+    assert_eq!(run.status, RunStatus::Completed);
+}

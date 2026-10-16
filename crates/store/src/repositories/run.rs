@@ -65,6 +65,24 @@ pub async fn update_run(pool: &SqlitePool, run: &Run) -> Result<(), StoreError> 
     Ok(())
 }
 
+pub async fn fail_interrupted_runs(pool: &SqlitePool) -> Result<u64, StoreError> {
+    let result = sqlx::query(
+        r#"
+        UPDATE runs
+        SET status = ?, finished_at = ?
+        WHERE status IN (?, ?)
+        "#,
+    )
+    .bind(run_status_to_str(&RunStatus::Failed))
+    .bind(chrono::Utc::now().to_rfc3339())
+    .bind(run_status_to_str(&RunStatus::Queued))
+    .bind(run_status_to_str(&RunStatus::Running))
+    .execute(pool)
+    .await?;
+
+    Ok(result.rows_affected())
+}
+
 pub async fn get_run(pool: &SqlitePool, id: Uuid) -> Result<Option<Run>, StoreError> {
     let id_str = id.to_string();
     let row = sqlx::query(

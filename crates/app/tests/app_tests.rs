@@ -186,3 +186,57 @@ async fn test_app_service_workspace_and_reports() {
     let content = service.read_report("test-report.md").await.unwrap();
     assert!(content.contains("# Báo cáo Test"));
 }
+
+#[tokio::test]
+async fn test_init_fails_runs_interrupted_by_previous_process() {
+    use hubbub_domain::entities::conversation::Conversation;
+    use hubbub_domain::entities::run::{Run, RunStatus};
+    use hubbub_domain::ports::store::Store;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let data_dir = tmp.path().join("data");
+    std::fs::create_dir_all(&data_dir).unwrap();
+    let run_id = uuid::Uuid::now_v7();
+    {
+        let db = data_dir.join("hubbub.db");
+        let store = SqliteStore::open(&db.to_string_lossy()).await.unwrap();
+        let now = chrono::Utc::now();
+        let conv_id = uuid::Uuid::now_v7();
+        store
+            .create_conversation(&Conversation {
+                id: conv_id,
+                title: "Bị gián đoạn".to_string(),
+                agent_id: "researcher".to_string(),
+                created_at: now,
+                updated_at: now,
+                archived: false,
+            })
+            .await
+            .unwrap();
+        store
+            .create_run(&Run {
+                id: run_id,
+                conversation_id: conv_id,
+                agent_id: "researcher".to_string(),
+                parent_run_id: None,
+                status: RunStatus::Running,
+                usage: None,
+                cost_usd: None,
+                started_at: now,
+                finished_at: None,
+            })
+            .await
+            .unwrap();
+    }
+
+    let config = AppConfig {
+        workspace_dir: tmp.path().to_path_buf(),
+        ..Default::default()
+    };
+    let _service = AppService::init(config).await.unwrap();
+
+    let db = data_dir.join("hubbub.db");
+    let store = SqliteStore::open(&db.to_string_lossy()).await.unwrap();
+    let run = store.get_run(run_id).await.unwrap().unwrap();
+    assert_eq!(run.status, RunStatus::Failed);
+}

@@ -126,7 +126,7 @@ impl<'a> LlmRunner<'a> {
                 Some(Ok(LlmChunk::Usage(usage))) => {
                     p_tokens += usage.prompt_tokens;
                     c_tokens += usage.completion_tokens;
-                    budget.record_usage(&usage)?;
+                    budget.record_usage(&usage);
                 }
                 Some(Ok(LlmChunk::FinishReason(r))) => finish_reason = Some(r),
                 Some(Ok(LlmChunk::Done)) | None => break,
@@ -207,7 +207,7 @@ impl<'a> LlmRunner<'a> {
                     Some(Ok(LlmChunk::Usage(usage))) => {
                         *p_tokens += usage.prompt_tokens;
                         *c_tokens += usage.completion_tokens;
-                        let _ = budget.record_usage(&usage);
+                        budget.record_usage(&usage);
                     }
                     Some(Ok(LlmChunk::FinishReason(r))) => reason = Some(r),
                     Some(Ok(LlmChunk::Done)) | None => break,
