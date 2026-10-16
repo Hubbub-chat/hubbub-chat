@@ -37,9 +37,11 @@ fmt-check:
 fmt:
     cargo fmt --all
 
-# Run TypeScript checks
+# Run TypeScript checks, frontend lint and build
 lint-ui:
-    npx tsc --noEmit
+    npx tsc -b
+    npm run lint
+    npx vite build
 
 # === Build ===
 

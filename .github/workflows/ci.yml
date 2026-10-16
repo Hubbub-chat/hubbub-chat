@@ -42,8 +42,15 @@ jobs:
       - name: Rust tests
         run: cargo test --workspace
 
+      # tsconfig.json is a solution file ("files": []), so -b is required to check anything
       - name: TypeScript typecheck
-        run: npx tsc --noEmit
+        run: npx tsc -b
+
+      - name: Frontend lint
+        run: npm run lint
+
+      - name: Frontend build
+        run: npx vite build
 
   # security:
   #   name: Security Audit
