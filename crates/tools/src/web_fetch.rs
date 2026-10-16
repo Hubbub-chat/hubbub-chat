@@ -14,7 +14,9 @@ const MAX_REDIRECTS: usize = 5;
 const MAX_BODY_BYTES: usize = 5 * 1024 * 1024;
 
 pub struct WebFetchTool {
-    client: reqwest::Client,
+    /// `None` if the guarded client could not be built; fetching then fails instead of
+    /// falling back to a client without the SSRF protections.
+    client: Option<reqwest::Client>,
 }
 
 impl Default for WebFetchTool {
@@ -44,9 +46,11 @@ impl WebFetchTool {
             // Redirects are followed by hand so every hop is validated
             .redirect(reqwest::redirect::Policy::none())
             .dns_resolver(Arc::new(PublicOnlyResolver))
+            // A proxy would resolve the hostname itself and bypass the resolver above
+            .no_proxy()
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Hubbub/0.2.0")
             .build()
-            .unwrap_or_else(|_| reqwest::Client::new());
+            .ok();
 
         Self { client }
     }
@@ -109,10 +113,13 @@ impl WebFetchTool {
         let mut url = UrlGuard::validate_url(trimmed_url)?;
 
         // 2. GET, following redirects by hand and re-validating every hop
+        let client = self
+            .client
+            .as_ref()
+            .ok_or_else(|| ToolError::Execution("HTTP client is unavailable".to_string()))?;
         let mut redirects = 0;
         let res = loop {
-            let res = self
-                .client
+            let res = client
                 .get(url.as_str())
                 .send()
                 .await
