@@ -31,7 +31,8 @@ impl UrlGuard {
                 Self::check_ip_allowed(&IpAddr::V6(v6), trimmed)?;
             }
             Some(url::Host::Domain(host)) => {
-                let lower_host = host.to_lowercase();
+                // "localhost." is the fully qualified form of "localhost"
+                let lower_host = host.trim_end_matches('.').to_lowercase();
                 if lower_host == "localhost"
                     || lower_host.ends_with(".localhost")
                     || lower_host.ends_with(".local")

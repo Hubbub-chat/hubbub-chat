@@ -24,4 +24,5 @@ chrono = { workspace = true }
 [dev-dependencies]
 tempfile = { workspace = true }
 hubbub-workspace = { path = "../workspace" }
+http = "1"
 

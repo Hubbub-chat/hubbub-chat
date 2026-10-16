@@ -249,3 +249,15 @@ fn test_path_guard_protects_system_files() {
     assert!(PathGuard::check_write_path(root, ".git/config").is_err());
     assert!(PathGuard::check_write_path(root, ".env").is_err());
 }
+
+#[test]
+fn test_url_guard_blocks_localhost_with_trailing_dot() {
+    // "localhost." is the same host as "localhost" (fully qualified form)
+    for url in [
+        "http://localhost./admin",
+        "http://LOCALHOST./",
+        "http://metadata.google.internal./",
+    ] {
+        assert!(UrlGuard::validate_url(url).is_err(), "{url}");
+    }
+}

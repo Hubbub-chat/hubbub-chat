@@ -288,3 +288,40 @@ fn test_web_fetch_truncation_is_char_safe() {
     assert!(!out.starts_with(&"ệ".repeat(25_001)));
     assert!(out.contains("cắt bớt"));
 }
+
+#[tokio::test]
+async fn test_web_fetch_dns_check_rejects_hosts_resolving_to_private_ips() {
+    // UrlGuard only sees the hostname; the address it resolves to must be checked too
+    assert!(
+        WebFetchTool::resolve_public_addrs("localhost")
+            .await
+            .is_err()
+    );
+}
+
+#[test]
+fn test_web_fetch_redirect_target_is_revalidated() {
+    let from = url::Url::parse("https://example.com/a/b").unwrap();
+    assert_eq!(
+        WebFetchTool::redirect_target(&from, "/c").unwrap().as_str(),
+        "https://example.com/c"
+    );
+    for location in [
+        "http://192.168.1.1/router",
+        "http://169.254.169.254/latest/meta-data",
+        "http://localhost/admin",
+        "file:///etc/passwd",
+    ] {
+        assert!(
+            WebFetchTool::redirect_target(&from, location).is_err(),
+            "{location}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_web_fetch_body_is_size_limited() {
+    let res = reqwest::Response::from(http::Response::new(vec![b'a'; 10_000]));
+    let body = WebFetchTool::read_body_limited(res, 1_000).await.unwrap();
+    assert_eq!(body.len(), 1_000);
+}
