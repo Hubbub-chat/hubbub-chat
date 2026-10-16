@@ -1,0 +1,3 @@
+# sqlx checksums migration files byte for byte; CRLF from a Windows checkout
+# (core.autocrlf) makes an existing database refuse to start. Always LF.
+*.sql text eol=lf
