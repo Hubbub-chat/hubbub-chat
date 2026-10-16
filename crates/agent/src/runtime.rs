@@ -91,6 +91,13 @@ impl AgentRuntime {
         agent: &Agent,
         cancellation_token: &CancellationToken,
     ) -> Result<(), AgentError> {
+        self.event_sink
+            .emit(RunEvent::RunStarted {
+                run_id: run.id.to_string(),
+                conversation_id: run.conversation_id.to_string(),
+            })
+            .await?;
+
         let history = self
             .store
             .list_messages(run.conversation_id, 1000, 0)
@@ -362,6 +369,7 @@ impl AgentRuntime {
         let _ = self
             .event_sink
             .emit(RunEvent::Error {
+                run_id: run.id.to_string(),
                 message: err.to_string(),
                 recoverable: false,
             })

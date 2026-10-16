@@ -3,6 +3,9 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { RunEvent } from '../types';
 
 interface UseRunEventsProps {
+  onRunStarted: (runId: string, conversationId: string) => void;
+  /** Events from any other run (e.g. one left running in another conversation) are dropped. */
+  isActiveRun: (runId: string) => boolean;
   onMessageDelta: (delta: string) => void;
   onToolStarted: (toolName: string, argsPreview: string) => void;
   onToolFinished: (toolName: string, success: boolean, summary: string) => void;
@@ -11,6 +14,8 @@ interface UseRunEventsProps {
 }
 
 export function useRunEvents({
+  onRunStarted,
+  isActiveRun,
   onMessageDelta,
   onToolStarted,
   onToolFinished,
@@ -27,6 +32,12 @@ export function useRunEvents({
           if (!isMounted) return;
           const payload = event.payload;
           if (!payload) return;
+
+          if (payload.type === 'RunStarted') {
+            onRunStarted(payload.data.run_id, payload.data.conversation_id);
+            return;
+          }
+          if (!isActiveRun(payload.data.run_id)) return;
 
           switch (payload.type) {
             case 'MessageDelta':
@@ -57,5 +68,13 @@ export function useRunEvents({
       isMounted = false;
       if (unlisten) unlisten();
     };
-  }, [onMessageDelta, onToolStarted, onToolFinished, onRunFinished, onError]);
+  }, [
+    onRunStarted,
+    isActiveRun,
+    onMessageDelta,
+    onToolStarted,
+    onToolFinished,
+    onRunFinished,
+    onError,
+  ]);
 }

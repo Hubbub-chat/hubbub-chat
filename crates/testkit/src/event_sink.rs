@@ -26,7 +26,7 @@ impl InMemoryEventSink {
         let lock = self.events.lock().await;
         lock.iter()
             .filter_map(|e| match e {
-                RunEvent::MessageDelta { content } => Some(content.clone()),
+                RunEvent::MessageDelta { content, .. } => Some(content.clone()),
                 _ => None,
             })
             .collect()

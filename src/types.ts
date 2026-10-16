@@ -59,11 +59,15 @@ export interface Run {
 }
 
 export type RunEvent =
-  | { type: 'MessageDelta'; data: { content: string } }
-  | { type: 'ToolStarted'; data: { tool_name: string; args_preview: string } }
-  | { type: 'ToolFinished'; data: { tool_name: string; success: boolean; summary: string } }
+  | { type: 'RunStarted'; data: { run_id: string; conversation_id: string } }
+  | { type: 'MessageDelta'; data: { run_id: string; content: string } }
+  | { type: 'ToolStarted'; data: { run_id: string; tool_name: string; args_preview: string } }
+  | {
+      type: 'ToolFinished';
+      data: { run_id: string; tool_name: string; success: boolean; summary: string };
+    }
   | { type: 'RunFinished'; data: { run_id: string; status: string } }
-  | { type: 'Error'; data: { message: string; recoverable: boolean } };
+  | { type: 'Error'; data: { run_id: string; message: string; recoverable: boolean } };
 
 export interface ToolLog {
   id: string;

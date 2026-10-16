@@ -641,3 +641,66 @@ async fn test_cancel_mid_tool_batch_keeps_conversation_usable() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_run_started_first_and_every_event_tagged_with_run_id() {
+    use hubbub_domain::events::RunEvent;
+
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    let event_sink = Arc::new(InMemoryEventSink::new());
+    let tool_host = Arc::new(MockToolHost::new());
+    tool_host
+        .register_simple_tool("web_search", "Tìm kiếm", "Kết quả")
+        .await;
+    fake_llm
+        .push_tool_call("call_1", "web_search", "{\"query\":\"x\"}")
+        .await;
+    fake_llm.push_text_deltas(&["Xong."], None).await;
+
+    let runtime = AgentRuntime::new(
+        store.clone(),
+        fake_llm.clone(),
+        tool_host.clone(),
+        event_sink.clone(),
+        None,
+    );
+    let agent = create_test_agent("test-agent", "Agent.");
+    let conv_id = Uuid::now_v7();
+    let run_id = Uuid::now_v7();
+    runtime
+        .execute_run_with_id(
+            conv_id,
+            &agent,
+            Some("Tìm"),
+            CancellationToken::new(),
+            Some(run_id),
+        )
+        .await
+        .unwrap();
+
+    let events = event_sink.get_events().await;
+    // The UI needs the run id before the run ends, or Cancel has nothing to target
+    match &events[0] {
+        RunEvent::RunStarted {
+            run_id: r,
+            conversation_id: c,
+        } => {
+            assert_eq!(r, &run_id.to_string());
+            assert_eq!(c, &conv_id.to_string());
+        }
+        other => panic!("first event should be RunStarted, got {other:?}"),
+    }
+    for event in &events {
+        let tagged = match event {
+            RunEvent::RunStarted { run_id, .. }
+            | RunEvent::MessageDelta { run_id, .. }
+            | RunEvent::ToolStarted { run_id, .. }
+            | RunEvent::ToolFinished { run_id, .. }
+            | RunEvent::RunFinished { run_id, .. }
+            | RunEvent::Error { run_id, .. } => run_id.clone(),
+            other => panic!("unexpected event {other:?}"),
+        };
+        assert_eq!(tagged, run_id.to_string());
+    }
+}

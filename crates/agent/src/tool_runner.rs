@@ -40,7 +40,8 @@ impl<'a> ToolRunner<'a> {
         let args_val: Value =
             serde_json::from_str(&tc.arguments).unwrap_or(Value::String(tc.arguments.clone()));
 
-        self.emit_tool_start(&tc.name, &tc.arguments).await?;
+        self.emit_tool_start(run_id, &tc.name, &tc.arguments)
+            .await?;
 
         let tool_step = self
             .create_initial_step(run_id, step_idx, args_val.clone())
@@ -63,7 +64,8 @@ impl<'a> ToolRunner<'a> {
         self.finish_step(tool_step, success, elapsed, &content)
             .await?;
 
-        self.emit_tool_finished(&tc.name, success, &content).await?;
+        self.emit_tool_finished(run_id, &tc.name, success, &content)
+            .await?;
 
         self.persist_tool_message(conversation_id, run_id, &tc.id, &content)
             .await?;
@@ -137,7 +139,12 @@ impl<'a> ToolRunner<'a> {
         let _ = self.store.record_audit_log(&entry).await;
     }
 
-    async fn emit_tool_start(&self, name: &str, args: &str) -> Result<(), AgentError> {
+    async fn emit_tool_start(
+        &self,
+        run_id: Uuid,
+        name: &str,
+        args: &str,
+    ) -> Result<(), AgentError> {
         let preview = if args.len() > 100 {
             format!("{}...", &args[..100])
         } else {
@@ -145,6 +152,7 @@ impl<'a> ToolRunner<'a> {
         };
         self.event_sink
             .emit(RunEvent::ToolStarted {
+                run_id: run_id.to_string(),
                 tool_name: name.to_string(),
                 args_preview: preview,
             })
@@ -154,6 +162,7 @@ impl<'a> ToolRunner<'a> {
 
     async fn emit_tool_finished(
         &self,
+        run_id: Uuid,
         name: &str,
         success: bool,
         content: &str,
@@ -165,6 +174,7 @@ impl<'a> ToolRunner<'a> {
         };
         self.event_sink
             .emit(RunEvent::ToolFinished {
+                run_id: run_id.to_string(),
                 tool_name: name.to_string(),
                 success,
                 summary,

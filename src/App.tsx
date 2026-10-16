@@ -49,6 +49,13 @@ export default function App() {
     activeConversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
 
+  // The run whose events the chat view shows; read synchronously by the event listener
+  const activeRunIdRef = useRef<string | null>(null);
+  const trackRun = useCallback((runId: string | null) => {
+    activeRunIdRef.current = runId;
+    setActiveRunId(runId);
+  }, []);
+
   // Load messages for a conversation
   const loadMessages = useCallback(async (convId: string) => {
     try {
@@ -75,6 +82,15 @@ export default function App() {
 
   // Listen for Tauri streaming run events via custom hook
   useRunEvents({
+    onRunStarted: useCallback(
+      (runId: string, conversationId: string) => {
+        if (conversationId === activeConversationIdRef.current) {
+          trackRun(runId);
+        }
+      },
+      [trackRun]
+    ),
+    isActiveRun: useCallback((runId: string) => runId === activeRunIdRef.current, []),
     onMessageDelta: useCallback((delta: string) => {
       setStreamingText((prev) => prev + delta);
     }, []),
@@ -103,27 +119,24 @@ export default function App() {
       );
     }, []),
     onRunFinished: useCallback(() => {
+      trackRun(null);
       if (activeConversationIdRef.current) {
         loadMessages(activeConversationIdRef.current).finally(() => {
           setIsStreaming(false);
           isSendingRef.current = false;
-          setActiveRunId(null);
           setStreamingText('');
           setActiveTools([]);
         });
       } else {
         setIsStreaming(false);
         isSendingRef.current = false;
-        setActiveRunId(null);
         setStreamingText('');
         setActiveTools([]);
       }
-    }, [loadMessages]),
+    }, [loadMessages, trackRun]),
+    // RunFinished always follows Error and does the cleanup, so the run stays tracked here
     onError: useCallback((message: string) => {
       setErrorMsg(message);
-      setIsStreaming(false);
-      isSendingRef.current = false;
-      setActiveRunId(null);
     }, []),
   });
 
@@ -136,6 +149,8 @@ export default function App() {
       if (conv?.agent_id) {
         setSelectedAgentId(conv.agent_id);
       }
+      // A run still going in the old conversation keeps running; its events are ignored from now on
+      trackRun(null);
       setIsStreaming(false);
       isSendingRef.current = false;
       setStreamingText('');
@@ -143,7 +158,7 @@ export default function App() {
       setErrorMsg(null);
       loadMessages(id);
     },
-    [conversations, loadMessages]
+    [conversations, loadMessages, trackRun]
   );
 
   // Handle creating a new conversation
@@ -157,6 +172,7 @@ export default function App() {
       setActiveConversationId(newConv.id);
       setActiveNavView('chat');
       setMessages([]);
+      trackRun(null);
       setIsStreaming(false);
       isSendingRef.current = false;
       setStreamingText('');
@@ -165,7 +181,7 @@ export default function App() {
     } catch (err) {
       console.error('Failed to create new conversation:', err);
     }
-  }, [selectedAgentId]);
+  }, [selectedAgentId, trackRun]);
 
   // Handle sending a message with strict in-flight send lock
   const handleSendMessage = useCallback(
@@ -187,38 +203,41 @@ export default function App() {
       };
       setMessages((prev) => [...prev, optimisticMsg]);
 
+      // send_message resolves only when the run ends; the run id arrives earlier via RunStarted
+      const sentConversationId = activeConversationId;
       try {
-        const run = await invoke<Run>('send_message', {
-          conversationId: activeConversationId,
+        await invoke<Run>('send_message', {
+          conversationId: sentConversationId,
           agentId: selectedAgentId,
           prompt,
         });
-        setActiveRunId(run.id);
       } catch (err) {
         console.error('Failed to send message:', err);
-        setIsStreaming(false);
-        setActiveRunId(null);
-        setErrorMsg(String(err));
+        // The user may have moved to another conversation meanwhile; leave that view alone
+        if (activeConversationIdRef.current === sentConversationId) {
+          setIsStreaming(false);
+          trackRun(null);
+          setErrorMsg(String(err));
+        }
       } finally {
         isSendingRef.current = false;
       }
     },
-    [activeConversationId, selectedAgentId, isStreaming]
+    [activeConversationId, selectedAgentId, isStreaming, trackRun]
   );
 
-  // Handle cancelling a run
+  // Handle cancelling a run; the RunFinished("cancelled") event does the cleanup
   const handleCancelRun = useCallback(async () => {
     if (!activeRunId) return;
     try {
       await invoke('cancel_run', { runId: activeRunId });
     } catch (err) {
       console.error('Failed to cancel run:', err);
-    } finally {
       setIsStreaming(false);
       isSendingRef.current = false;
-      setActiveRunId(null);
+      trackRun(null);
     }
-  }, [activeRunId]);
+  }, [activeRunId, trackRun]);
 
   // Handle changing agent model
   const handleSelectModel = useCallback(

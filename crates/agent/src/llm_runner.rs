@@ -119,7 +119,10 @@ impl<'a> LlmRunner<'a> {
                 Some(Ok(LlmChunk::Delta(delta))) => {
                     text.push_str(&delta);
                     self.event_sink
-                        .emit(RunEvent::MessageDelta { content: delta })
+                        .emit(RunEvent::MessageDelta {
+                            run_id: params.run_id.to_string(),
+                            content: delta,
+                        })
                         .await?;
                 }
                 Some(Ok(LlmChunk::ToolCall(tc))) => tool_calls.push(tc),
@@ -201,7 +204,10 @@ impl<'a> LlmRunner<'a> {
                     Some(Ok(LlmChunk::Delta(delta))) => {
                         text.push_str(&delta);
                         self.event_sink
-                            .emit(RunEvent::MessageDelta { content: delta })
+                            .emit(RunEvent::MessageDelta {
+                                run_id: params.run_id.to_string(),
+                                content: delta,
+                            })
                             .await?;
                     }
                     Some(Ok(LlmChunk::Usage(usage))) => {
@@ -228,14 +234,7 @@ impl<'a> LlmRunner<'a> {
         step.status = StepStatus::Failed;
         step.duration_ms = Some(step_start.elapsed().as_millis() as u64);
         step.output = Some(serde_json::json!({ "error": err.to_string() }));
+        // No Error event here: the runtime reports the failure once when it finalizes the run
         let _ = self.store.create_step(step).await;
-
-        let _ = self
-            .event_sink
-            .emit(RunEvent::Error {
-                message: err.to_string(),
-                recoverable: false,
-            })
-            .await;
     }
 }
