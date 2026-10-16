@@ -15,6 +15,7 @@ use hubbub_domain::ports::event_sink::EventSink;
 use hubbub_domain::ports::llm::{LlmMessage, ToolCall};
 use hubbub_domain::ports::store::Store;
 use hubbub_domain::ports::tool_host::{ToolContext, ToolHost};
+use hubbub_domain::text::truncate_with_ellipsis;
 use hubbub_policy::{PathGuard, PermissionChecker, PolicyError, UrlGuard};
 
 use crate::errors::AgentError;
@@ -116,16 +117,8 @@ impl<'a> ToolRunner<'a> {
         decision: &str,
         result: &str,
     ) {
-        let args_digest = if args.len() > 200 {
-            format!("{}...", &args[..200])
-        } else {
-            args.to_string()
-        };
-        let result_digest = if result.len() > 200 {
-            Some(format!("{}...", &result[..200]))
-        } else {
-            Some(result.to_string())
-        };
+        let args_digest = truncate_with_ellipsis(args, 200);
+        let result_digest = Some(truncate_with_ellipsis(result, 200));
 
         let entry = AuditLog {
             id: Uuid::now_v7(),
@@ -145,11 +138,7 @@ impl<'a> ToolRunner<'a> {
         name: &str,
         args: &str,
     ) -> Result<(), AgentError> {
-        let preview = if args.len() > 100 {
-            format!("{}...", &args[..100])
-        } else {
-            args.to_string()
-        };
+        let preview = truncate_with_ellipsis(args, 100);
         self.event_sink
             .emit(RunEvent::ToolStarted {
                 run_id: run_id.to_string(),
@@ -167,11 +156,7 @@ impl<'a> ToolRunner<'a> {
         success: bool,
         content: &str,
     ) -> Result<(), AgentError> {
-        let summary = if content.len() > 100 {
-            format!("{}...", &content[..100])
-        } else {
-            content.to_string()
-        };
+        let summary = truncate_with_ellipsis(content, 100);
         self.event_sink
             .emit(RunEvent::ToolFinished {
                 run_id: run_id.to_string(),

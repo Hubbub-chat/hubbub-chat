@@ -5,6 +5,7 @@ use hubbub_domain::errors::DomainError;
 use hubbub_domain::ports::store::Store;
 use hubbub_domain::ports::tool_host::ToolContext;
 use hubbub_domain::ports::workspace_service::WorkspaceService;
+use hubbub_domain::text::truncate_chars;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -94,8 +95,8 @@ impl ReportWriteTool {
         let trimmed = slug.trim_matches('-').to_string();
         if trimmed.is_empty() {
             format!("report-{}", &Uuid::now_v7().to_string()[..8])
-        } else if trimmed.len() > 50 {
-            trimmed[..50].trim_matches('-').to_string()
+        } else if trimmed.chars().count() > 50 {
+            truncate_chars(&trimmed, 50).trim_matches('-').to_string()
         } else {
             trimmed
         }

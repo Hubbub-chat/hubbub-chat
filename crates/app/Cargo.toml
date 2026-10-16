@@ -31,4 +31,5 @@ tracing-appender = { workspace = true }
 [dev-dependencies]
 hubbub-testkit = { path = "../testkit" }
 tempfile = { workspace = true }
+wiremock = { workspace = true }
 
