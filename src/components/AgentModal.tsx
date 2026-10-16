@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { X, Bot, Sparkles, Check, Wrench, Loader2 } from 'lucide-react';
 import type { Agent } from '../types';
+import { permissionsForTools, slugifyAgentName } from '../utils/agentForm';
 
 interface AgentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveAgent: (agent: Agent) => Promise<void>;
   existingAgent?: Agent | null;
+  /** Ids already taken, so a new agent never overwrites one */
+  existingIds: string[];
 }
 
 const AVAILABLE_TOOLS = [
@@ -31,7 +34,13 @@ const POPULAR_MODELS = [
   'llama3.2',
 ];
 
-export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: AgentModalProps) => {
+export const AgentModal = ({
+  isOpen,
+  onClose,
+  onSaveAgent,
+  existingAgent,
+  existingIds,
+}: AgentModalProps) => {
   const [name, setName] = useState(existingAgent?.name || '');
   const [model, setModel] = useState(existingAgent?.model || 'gemini-3.8-flash');
   const [systemPrompt, setSystemPrompt] = useState(
@@ -59,30 +68,32 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
 
     setIsSaving(true);
     try {
-      const slug =
-        existingAgent?.id ||
-        name
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '_')
-          .slice(0, 24) ||
-        `agent_${Date.now()}`;
-
-      const newAgent: Agent = {
-        id: slug,
-        name: name.trim(),
-        model: model.trim(),
-        system_prompt: systemPrompt.trim(),
-        tools: {
-          builtin: selectedTools,
-          mcp: [],
-        },
-        budget: existingAgent?.budget || {
-          max_steps: 25,
-          max_tokens: 200_000,
-          max_cost_usd: 0.5,
-          timeout_s: 300,
-        },
-      };
+      const tools = { builtin: selectedTools, mcp: [] };
+      // Editing keeps the agent's own permissions; a new agent gets what its tools need
+      const newAgent: Agent = existingAgent
+        ? {
+            ...existingAgent,
+            name: name.trim(),
+            model: model.trim(),
+            system_prompt: systemPrompt.trim(),
+            tools,
+          }
+        : {
+            id: slugifyAgentName(name, existingIds),
+            name: name.trim(),
+            model: model.trim(),
+            system_prompt: systemPrompt.trim(),
+            tools,
+            permissions: permissionsForTools(selectedTools),
+            budget: {
+              max_steps: 25,
+              max_tokens: 200_000,
+              max_cost_usd: 0.5,
+              timeout_s: 300,
+            },
+            delegation: { can_delegate_to: [] },
+            version: 1,
+          };
 
       await onSaveAgent(newAgent);
       onClose();

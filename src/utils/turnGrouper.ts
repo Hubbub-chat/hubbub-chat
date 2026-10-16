@@ -44,50 +44,31 @@ export function groupMessagesIntoTurns(messages: Message[]): ChatTurn[] {
 
     for (const part of msg.parts) {
       if (part.type === 'Text') {
-        const textContent =
-          typeof part.content === 'string'
-            ? part.content
-            : typeof part.content === 'object' && part.content !== null
-            ? JSON.stringify(part.content)
-            : String(part.content ?? '');
-        if (textContent.trim()) {
+        if (part.content.trim()) {
           if (currentTurn.finalText) {
             currentTurn.finalText += '\n\n';
           }
-          currentTurn.finalText += textContent;
+          currentTurn.finalText += part.content;
         }
       } else if (part.type === 'ToolCall') {
-        const callId = part.id || `tc-${Date.now()}-${Math.random()}`;
-        const toolName =
-          typeof part.content === 'object' && part.content !== null && 'name' in part.content
-            ? String((part.content as Record<string, unknown>).name)
-            : part.name || 'Công cụ';
-        const existingIdx = currentTurn.toolSteps.findIndex((t) => t.id === callId);
-        if (existingIdx >= 0) {
-          currentTurn.toolSteps[existingIdx].toolName = toolName;
-          currentTurn.toolSteps[existingIdx].args = part.arguments;
+        const { id, name, arguments: args } = part.content;
+        const existing = currentTurn.toolSteps.find((t) => t.id === id);
+        if (existing) {
+          existing.toolName = name;
+          existing.args = args;
         } else {
-          currentTurn.toolSteps.push({
-            id: callId,
-            toolName,
-            args: part.arguments,
-            status: 'running',
-          });
+          currentTurn.toolSteps.push({ id, toolName: name, args, status: 'running' });
         }
       } else if (part.type === 'ToolResult') {
-        const toolCallId = part.tool_call_id || '';
-        const resStr =
-          typeof part.content === 'object' && part.content !== null && 'result' in part.content
-            ? JSON.stringify((part.content as Record<string, unknown>).result)
-            : String(part.result ?? part.content ?? '');
-
-        const existing = currentTurn.toolSteps.find((t) => t.id === toolCallId);
+        const { tool_call_id, result } = part.content;
+        const resStr = typeof result === 'string' ? result : JSON.stringify(result);
+        const existing = currentTurn.toolSteps.find((t) => t.id === tool_call_id);
         if (existing) {
           existing.status = 'completed';
           existing.result = resStr;
         } else {
           currentTurn.toolSteps.push({
-            id: toolCallId || `tr-${Date.now()}`,
+            id: tool_call_id,
             toolName: 'Công cụ',
             result: resStr,
             status: 'completed',
@@ -99,6 +80,14 @@ export function groupMessagesIntoTurns(messages: Message[]): ChatTurn[] {
 
   if (currentTurn) {
     turns.push(currentTurn);
+  }
+
+  // History is stored messages only (live tools are tracked separately), so a call
+  // still without a result belongs to a run that was cancelled or failed
+  for (const turn of turns) {
+    for (const step of turn.toolSteps) {
+      if (step.status === 'running') step.status = 'failed';
+    }
   }
 
   return turns;

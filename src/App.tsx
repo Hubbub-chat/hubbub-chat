@@ -390,6 +390,7 @@ export default function App() {
         isOpen={isAgentModalOpen}
         onClose={() => setIsAgentModalOpen(false)}
         onSaveAgent={handleSaveAgent}
+        existingIds={agents.map((a) => a.id)}
       />
     </div>
   );
