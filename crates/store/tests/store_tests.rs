@@ -740,3 +740,20 @@ async fn test_fail_interrupted_runs() {
         .expect("exists");
     assert_eq!(run.status, RunStatus::Completed);
 }
+
+#[test]
+fn test_migration_files_use_lf_line_endings() {
+    // sqlx stores a checksum of each migration's exact bytes. A Windows checkout with
+    // core.autocrlf rewrites them as CRLF, and an existing database then refuses to start
+    // ("migration 1 was previously applied but has been modified"). .gitattributes pins LF.
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
+    for entry in std::fs::read_dir(&dir).unwrap() {
+        let path = entry.unwrap().path();
+        let bytes = std::fs::read(&path).unwrap();
+        assert!(
+            !bytes.contains(&b'\r'),
+            "{} has CRLF line endings",
+            path.display()
+        );
+    }
+}
