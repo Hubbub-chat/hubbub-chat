@@ -92,6 +92,16 @@ impl Store for SqliteStore {
             .map_err(Into::into)
     }
 
+    async fn list_recent_messages(
+        &self,
+        conversation_id: Uuid,
+        limit: u32,
+    ) -> Result<Vec<Message>, DomainError> {
+        repositories::message::list_recent(&self.pool, conversation_id, limit)
+            .await
+            .map_err(Into::into)
+    }
+
     async fn search_messages(&self, query: &str) -> Result<Vec<Message>, DomainError> {
         repositories::message::search(&self.pool, query)
             .await

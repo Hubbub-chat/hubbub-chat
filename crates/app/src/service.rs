@@ -179,6 +179,18 @@ impl AppService {
         Ok(msgs)
     }
 
+    /// The newest `limit` messages, oldest-first (what a chat view shows).
+    pub async fn list_recent_messages(
+        &self,
+        conversation_id: Uuid,
+        limit: u32,
+    ) -> Result<Vec<Message>, AppError> {
+        Ok(self
+            .store
+            .list_recent_messages(conversation_id, limit)
+            .await?)
+    }
+
     // --- Secret & Provider Key Management ---
 
     pub async fn set_provider_key(&self, provider: &str, api_key: &str) -> Result<(), AppError> {

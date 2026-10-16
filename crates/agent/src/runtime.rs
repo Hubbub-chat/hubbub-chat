@@ -21,6 +21,9 @@ use crate::errors::AgentError;
 use crate::llm_runner::{LlmRunner, LlmStepParams};
 use crate::tool_runner::ToolRunner;
 
+/// How many of the newest messages are sent as history.
+const MAX_HISTORY_MESSAGES: u32 = 1000;
+
 pub struct AgentRuntime {
     store: Arc<dyn Store>,
     llm_provider: Arc<dyn LlmProvider>,
@@ -100,7 +103,7 @@ impl AgentRuntime {
 
         let history = self
             .store
-            .list_messages(run.conversation_id, 1000, 0)
+            .list_recent_messages(run.conversation_id, MAX_HISTORY_MESSAGES)
             .await?;
         let mut working_messages = ContextBuilder::build(agent, &history, None);
         let active_tools = self.resolve_active_tools(agent);

@@ -87,6 +87,33 @@ pub async fn list(
     Ok(result)
 }
 
+/// Newest `limit` messages, oldest-first. `id` (UUIDv7) breaks `created_at` ties.
+pub async fn list_recent(
+    pool: &SqlitePool,
+    conversation_id: Uuid,
+    limit: u32,
+) -> Result<Vec<Message>, StoreError> {
+    let rows = sqlx::query(
+        r#"
+        SELECT id, conversation_id, run_id, role, parts_json, created_at
+        FROM (
+            SELECT id, conversation_id, run_id, role, parts_json, created_at
+            FROM messages
+            WHERE conversation_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?
+        )
+        ORDER BY created_at ASC, id ASC
+        "#,
+    )
+    .bind(conversation_id.to_string())
+    .bind(limit as i64)
+    .fetch_all(pool)
+    .await?;
+
+    rows.iter().map(parse_message_row).collect()
+}
+
 pub async fn search(pool: &SqlitePool, query: &str) -> Result<Vec<Message>, StoreError> {
     let trimmed = query.trim();
     if trimmed.is_empty() {

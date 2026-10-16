@@ -74,6 +74,19 @@ pub async fn list_messages(
         .map_err(|e| e.to_string())
 }
 
+/// Tauri IPC command: the newest messages in a conversation, oldest-first.
+#[tauri::command]
+pub async fn list_recent_messages(
+    conversation_id: Uuid,
+    limit: Option<u32>,
+    service: State<'_, Arc<AppService>>,
+) -> Result<Vec<Message>, String> {
+    service
+        .list_recent_messages(conversation_id, limit.unwrap_or(100))
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Tauri IPC command: list available agents.
 #[tauri::command]
 pub async fn list_agents(service: State<'_, Arc<AppService>>) -> Result<Vec<Agent>, String> {

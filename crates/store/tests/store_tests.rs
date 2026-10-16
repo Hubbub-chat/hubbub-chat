@@ -740,3 +740,48 @@ async fn test_fail_interrupted_runs() {
         .expect("exists");
     assert_eq!(run.status, RunStatus::Completed);
 }
+
+#[tokio::test]
+async fn test_list_recent_messages_returns_newest_in_chronological_order() {
+    let store = SqliteStore::open_in_memory().await.expect("open");
+    let conv_id = Uuid::now_v7();
+    let start = Utc::now();
+    store
+        .create_conversation(&Conversation {
+            id: conv_id,
+            title: "Dài".to_string(),
+            agent_id: "researcher".to_string(),
+            created_at: start,
+            updated_at: start,
+            archived: false,
+        })
+        .await
+        .expect("create conv");
+
+    for i in 0..5 {
+        store
+            .append_message(&Message {
+                id: Uuid::now_v7(),
+                conversation_id: conv_id,
+                run_id: None,
+                role: MessageRole::User,
+                parts: vec![MessagePart::Text(format!("tin {i}"))],
+                created_at: start + chrono::Duration::seconds(i),
+            })
+            .await
+            .expect("append");
+    }
+
+    let recent = store
+        .list_recent_messages(conv_id, 3)
+        .await
+        .expect("recent");
+    let texts: Vec<_> = recent
+        .iter()
+        .map(|m| match &m.parts[0] {
+            MessagePart::Text(t) => t.clone(),
+            _ => String::new(),
+        })
+        .collect();
+    assert_eq!(texts, vec!["tin 2", "tin 3", "tin 4"]);
+}

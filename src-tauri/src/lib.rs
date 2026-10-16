@@ -49,6 +49,7 @@ pub fn run() {
             commands::create_conversation,
             commands::get_conversation,
             commands::list_messages,
+            commands::list_recent_messages,
             commands::list_agents,
             commands::set_agent_model,
             commands::upsert_agent,

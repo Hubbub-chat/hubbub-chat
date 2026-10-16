@@ -704,3 +704,66 @@ async fn test_run_started_first_and_every_event_tagged_with_run_id() {
         assert_eq!(tagged, run_id.to_string());
     }
 }
+
+#[tokio::test]
+async fn test_long_conversation_sends_newest_history_to_llm() {
+    use hubbub_domain::entities::conversation::{Conversation, Message, MessagePart};
+
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    fake_llm.push_text_deltas(&["Đáp."], None).await;
+    let conv_id = Uuid::now_v7();
+    let start = chrono::Utc::now() - chrono::Duration::days(1);
+    store
+        .create_conversation(&Conversation {
+            id: conv_id,
+            title: "Dài".to_string(),
+            agent_id: "test-agent".to_string(),
+            created_at: start,
+            updated_at: start,
+            archived: false,
+        })
+        .await
+        .unwrap();
+    for i in 0..1100 {
+        let role = if i % 2 == 0 {
+            MessageRole::User
+        } else {
+            MessageRole::Assistant
+        };
+        store
+            .append_message(&Message {
+                id: Uuid::now_v7(),
+                conversation_id: conv_id,
+                run_id: None,
+                role,
+                parts: vec![MessagePart::Text(format!("cũ {i}"))],
+                created_at: start + chrono::Duration::seconds(i),
+            })
+            .await
+            .unwrap();
+    }
+
+    let runtime = AgentRuntime::new(
+        store.clone(),
+        fake_llm.clone(),
+        Arc::new(MockToolHost::new()),
+        Arc::new(InMemoryEventSink::new()),
+        None,
+    );
+    let agent = create_test_agent("test-agent", "Agent.");
+    runtime
+        .execute_run(
+            conv_id,
+            &agent,
+            Some("Câu hỏi mới nhất"),
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+
+    let calls = fake_llm.get_recorded_calls().await;
+    let last = calls[0].messages.last().unwrap();
+    assert_eq!(last.role, "user");
+    assert!(last.content.contains("Câu hỏi mới nhất"));
+}

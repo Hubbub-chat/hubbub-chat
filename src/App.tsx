@@ -59,10 +59,9 @@ export default function App() {
   // Load messages for a conversation
   const loadMessages = useCallback(async (convId: string) => {
     try {
-      const msgs = await invoke<Message[]>('list_messages', {
+      const msgs = await invoke<Message[]>('list_recent_messages', {
         conversationId: convId,
         limit: 100,
-        offset: 0,
       });
       setMessages(msgs);
     } catch (err) {

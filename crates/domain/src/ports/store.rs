@@ -23,6 +23,12 @@ pub trait Store: Send + Sync {
         limit: u32,
         offset: u32,
     ) -> Result<Vec<Message>, DomainError>;
+    /// The newest `limit` messages, returned oldest-first.
+    async fn list_recent_messages(
+        &self,
+        conversation_id: Uuid,
+        limit: u32,
+    ) -> Result<Vec<Message>, DomainError>;
 
     // Runs
     async fn create_run(&self, run: &Run) -> Result<(), DomainError>;
