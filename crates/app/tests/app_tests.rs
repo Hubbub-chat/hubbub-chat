@@ -240,3 +240,97 @@ async fn test_init_fails_runs_interrupted_by_previous_process() {
     let run = store.get_run(run_id).await.unwrap().unwrap();
     assert_eq!(run.status, RunStatus::Failed);
 }
+
+#[tokio::test]
+async fn test_write_report_long_vietnamese_title_does_not_panic() {
+    let tmp = tempfile::tempdir().unwrap();
+    let config = AppConfig {
+        workspace_dir: tmp.path().to_path_buf(),
+        ..Default::default()
+    };
+    let service = AppService::init(config).await.unwrap();
+
+    // Slug keeps non-ASCII letters; byte 50 of "a" + "ệ"* falls mid-character
+    let title = format!("A{}", "ệ".repeat(60));
+    service
+        .write_report(&title, "Nội dung.", None)
+        .await
+        .unwrap();
+
+    let reports = service.list_reports().await.unwrap();
+    assert_eq!(reports.len(), 1);
+    assert!(
+        reports[0].ends_with(&format!("a{}.md", "ệ".repeat(49))),
+        "{}",
+        reports[0]
+    );
+}
+
+#[tokio::test]
+async fn test_cancel_run_while_streaming_returns_cancelled_run() {
+    use hubbub_domain::entities::run::RunStatus;
+    use hubbub_domain::events::RunEvent;
+    use hubbub_testkit::InMemoryEventSink;
+    use std::time::Duration;
+    use wiremock::matchers::method;
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    // An LLM that takes far longer to answer than the test waits
+    let llm_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(30)))
+        .mount(&llm_server)
+        .await;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let mut config = AppConfig {
+        workspace_dir: tmp.path().to_path_buf(),
+        ..Default::default()
+    };
+    config.providers.get_mut("ollama").unwrap().base_url = Some(llm_server.uri());
+    let service = Arc::new(AppService::new(
+        config,
+        Arc::new(SqliteStore::open_in_memory().await.unwrap()),
+        Arc::new(InMemoryVault::new()),
+        Arc::new(MockToolHost::new()),
+    ));
+    service
+        .set_agent_model("analyst", "llama3.2")
+        .await
+        .unwrap(); // Ollama: no key needed
+
+    let sink = Arc::new(InMemoryEventSink::new());
+    let conv_id = uuid::Uuid::now_v7();
+    let send = tokio::spawn({
+        let (service, sink) = (service.clone(), sink.clone());
+        async move {
+            service
+                .send_message(conv_id, Some("analyst".to_string()), "Xin chào", sink)
+                .await
+        }
+    });
+
+    // The UI learns the run id from RunStarted, while send_message is still pending
+    let mut run_id = None;
+    for _ in 0..200 {
+        run_id = sink.get_events().await.iter().find_map(|e| match e {
+            RunEvent::RunStarted { run_id, .. } => Some(run_id.clone()),
+            _ => None,
+        });
+        if run_id.is_some() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let run_id: uuid::Uuid = run_id.expect("RunStarted emitted").parse().unwrap();
+    assert!(service.cancel_run(run_id).await.unwrap());
+
+    // A cancel the user asked for is not an error
+    let run = tokio::time::timeout(Duration::from_secs(5), send)
+        .await
+        .expect("run stops promptly")
+        .unwrap()
+        .expect("cancelled run is returned, not an error");
+    assert_eq!(run.id, run_id);
+    assert_eq!(run.status, RunStatus::Cancelled);
+}
