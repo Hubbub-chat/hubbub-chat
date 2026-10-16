@@ -234,10 +234,15 @@ fn test_path_guard_protects_system_files() {
     // Allowed paths
     assert!(PathGuard::check_write_path(root, "reports/summary.md").is_ok());
     assert!(PathGuard::check_write_path(root, "notes/todo.txt").is_ok());
-    assert!(PathGuard::check_write_path(root, "data/output.json").is_ok());
+    assert!(PathGuard::check_write_path(root, "notes/data/output.json").is_ok());
 
     // Protected paths must fail
+    assert!(PathGuard::check_write_path(root, "data/output.json").is_err()); // app DB lives here
     assert!(PathGuard::check_write_path(root, "config.toml").is_err());
+    // Windows treats these as the same paths as the lowercase ones
+    assert!(PathGuard::check_write_path(root, "AGENTS/prompt.md").is_err());
+    assert!(PathGuard::check_write_path(root, ".Versions./old.md").is_err());
+    assert!(PathGuard::check_write_path(root, "Data/hubbub.db").is_err());
     assert!(PathGuard::check_write_path(root, "agents/analyst/agent.toml").is_err());
     assert!(PathGuard::check_write_path(root, "agents/prompt.md").is_err());
     assert!(PathGuard::check_write_path(root, ".versions/old.md").is_err());

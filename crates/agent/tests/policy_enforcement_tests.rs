@@ -201,3 +201,114 @@ async fn test_agent_blocked_from_ssrf_metadata_ip() {
         "Unexpected tool step output: {output}"
     );
 }
+
+/// Runs one turn in which the LLM calls `tool` with `args`; returns whether the tool host ran it.
+async fn tool_was_executed(
+    agent: &hubbub_domain::entities::agent::Agent,
+    tool: &str,
+    args: &str,
+) -> bool {
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    let tool_host = Arc::new(MockToolHost::new());
+    tool_host
+        .register_simple_tool(tool, "Tool", "Nội dung")
+        .await;
+    fake_llm.push_tool_call("call_1", tool, args).await;
+    fake_llm.push_text_deltas(&["Xong."], None).await;
+
+    let runtime = AgentRuntime::new(
+        store,
+        fake_llm,
+        tool_host.clone(),
+        Arc::new(InMemoryEventSink::new()),
+        None,
+    );
+    runtime
+        .execute_run(
+            Uuid::now_v7(),
+            agent,
+            Some("Làm đi"),
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    !tool_host.get_recorded_calls().await.is_empty()
+}
+
+fn agent_with(tools: &[&str], fs_read: &[&str]) -> hubbub_domain::entities::agent::Agent {
+    let mut agent = create_test_agent("policy-agent", "Agent.");
+    agent.tools.builtin = tools.iter().map(|t| t.to_string()).collect();
+    agent.permissions = AgentPermissions {
+        fs_read: fs_read.iter().map(|p| p.to_string()).collect(),
+        fs_write: vec![],
+        network: NetworkPolicy::None,
+    };
+    agent
+}
+
+#[tokio::test]
+async fn test_tool_not_assigned_to_agent_is_denied() {
+    // A prompt-injected call to a tool the agent was never given
+    let agent = agent_with(&["fs_read"], &["**"]);
+    assert!(!tool_was_executed(&agent, "report_list", "{}").await);
+}
+
+#[tokio::test]
+async fn test_unknown_builtin_tool_is_denied() {
+    let agent = agent_with(&["shell_exec"], &["**"]);
+    assert!(!tool_was_executed(&agent, "shell_exec", r#"{"cmd":"dir"}"#).await);
+}
+
+#[tokio::test]
+async fn test_report_list_requires_read_permission_on_reports() {
+    assert!(!tool_was_executed(&agent_with(&["report_list"], &[]), "report_list", "{}").await);
+    assert!(
+        tool_was_executed(
+            &agent_with(&["report_list"], &["reports/**"]),
+            "report_list",
+            "{}"
+        )
+        .await
+    );
+}
+
+#[tokio::test]
+async fn test_app_data_dir_is_never_readable() {
+    let agent = agent_with(&["fs_read", "fs_list"], &["**"]);
+    for path in [
+        "data/hubbub.db",
+        "DATA/agents.json",
+        "./data/x",
+        "data",
+        "Data./hubbub.db",
+    ] {
+        let args = format!(r#"{{"path":"{path}"}}"#);
+        assert!(
+            !tool_was_executed(&agent, "fs_read", &args).await,
+            "fs_read {path}"
+        );
+        assert!(
+            !tool_was_executed(&agent, "fs_list", &args).await,
+            "fs_list {path}"
+        );
+    }
+    assert!(tool_was_executed(&agent, "fs_read", r#"{"path":"notes/data.md"}"#).await);
+}
+
+#[tokio::test]
+async fn test_listing_workspace_root_requires_root_read_permission() {
+    let narrow = agent_with(&["fs_list"], &["reports/**"]);
+    assert!(!tool_was_executed(&narrow, "fs_list", r#"{"path":""}"#).await);
+    assert!(!tool_was_executed(&narrow, "fs_list", r#"{"path":"."}"#).await);
+    assert!(tool_was_executed(&narrow, "fs_list", r#"{"path":"reports"}"#).await);
+    let wide = agent_with(&["fs_list"], &["**"]);
+    assert!(tool_was_executed(&wide, "fs_list", r#"{"path":"."}"#).await);
+}
+
+#[tokio::test]
+async fn test_mcp_tool_assigned_to_agent_runs() {
+    let mut agent = agent_with(&[], &[]);
+    agent.tools.mcp = vec!["github_search".to_string()];
+    assert!(tool_was_executed(&agent, "github_search", "{}").await);
+}

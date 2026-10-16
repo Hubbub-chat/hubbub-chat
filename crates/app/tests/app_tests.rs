@@ -334,3 +334,35 @@ async fn test_cancel_run_while_streaming_returns_cancelled_run() {
     assert_eq!(run.id, run_id);
     assert_eq!(run.status, RunStatus::Cancelled);
 }
+
+#[test]
+fn test_default_agents_have_permissions_for_their_tools() {
+    use hubbub_domain::entities::agent::NetworkPolicy;
+    use hubbub_policy::PermissionChecker;
+
+    for agent in hubbub_app::default_agents() {
+        let p = &agent.permissions;
+        for tool in &agent.tools.builtin {
+            let ok = match tool.as_str() {
+                "web_search" => {
+                    PermissionChecker::check_network(&agent.id, &p.network, true).is_ok()
+                }
+                "web_fetch" => p.network == NetworkPolicy::Open,
+                "fs_read" | "fs_list" => !p.fs_read.is_empty(),
+                "report_read" => {
+                    PermissionChecker::check_fs_read(&agent.id, p, "reports/a.md").is_ok()
+                }
+                "report_list" => PermissionChecker::check_fs_read(&agent.id, p, "reports").is_ok(),
+                "report_write" => {
+                    PermissionChecker::check_fs_write(&agent.id, p, "reports/a.md").is_ok()
+                }
+                other => panic!("{}: unknown tool {other}", agent.id),
+            };
+            assert!(
+                ok,
+                "agent '{}' has tool '{tool}' but no permission to use it",
+                agent.id
+            );
+        }
+    }
+}

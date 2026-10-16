@@ -235,40 +235,64 @@ impl<'a> ToolRunner<'a> {
         args: &Value,
         workspace_root: &str,
     ) -> Result<(), PolicyError> {
+        let deny = |reason: &str| PolicyError::PermissionDenied {
+            agent_id: agent.id.clone(),
+            operation: tool_name.to_string(),
+            reason: reason.to_string(),
+        };
+        // The model is only shown the agent's tools, but a prompt-injected call can name any
+        let tools = &agent.tools;
+        if !tools
+            .builtin
+            .iter()
+            .chain(&tools.mcp)
+            .any(|t| t == tool_name)
+        {
+            return Err(deny("tool is not assigned to this agent"));
+        }
+
         let ws_path = std::path::Path::new(workspace_root);
+        let perms = &agent.permissions;
+        let str_arg = |key: &str| args.get(key).and_then(Value::as_str).unwrap_or("").trim();
         match tool_name {
             "web_search" => {
-                PermissionChecker::check_network(&agent.id, &agent.permissions.network, true)?;
+                PermissionChecker::check_network(&agent.id, &perms.network, true)?;
             }
             "web_fetch" => {
-                PermissionChecker::check_network(&agent.id, &agent.permissions.network, false)?;
-                let url = args.get("url").and_then(Value::as_str).unwrap_or("");
-                UrlGuard::validate_url(url)?;
+                PermissionChecker::check_network(&agent.id, &perms.network, false)?;
+                UrlGuard::validate_url(str_arg("url"))?;
             }
             "fs_read" => {
-                let path = args.get("path").and_then(Value::as_str).unwrap_or("");
-                PathGuard::resolve_within_workspace(ws_path, path)?;
-                PermissionChecker::check_fs_read(&agent.id, &agent.permissions, path)?;
+                let path = str_arg("path");
+                PathGuard::check_read_path(ws_path, path)?;
+                PermissionChecker::check_fs_read(&agent.id, perms, path)?;
             }
-            "fs_list" => {
-                let path = args.get("path").and_then(Value::as_str).unwrap_or("");
-                if !path.is_empty() && path != "." {
-                    PathGuard::resolve_within_workspace(ws_path, path)?;
-                    PermissionChecker::check_fs_read(&agent.id, &agent.permissions, path)?;
+            "fs_list" => match str_arg("path") {
+                // Listing the workspace root needs read access to all of it
+                "" | "." => PermissionChecker::check_fs_read(&agent.id, perms, "")?,
+                path => {
+                    PathGuard::check_read_path(ws_path, path)?;
+                    PermissionChecker::check_fs_read(&agent.id, perms, path)?;
                 }
-            }
+            },
             "report_write" => {
-                let path = "reports/report.md";
-                PathGuard::resolve_within_workspace(ws_path, path)?;
-                PermissionChecker::check_fs_write(&agent.id, &agent.permissions, path)?;
+                let filename = match str_arg("filename") {
+                    "" => "report.md",
+                    f => f,
+                };
+                let path = format!("reports/{filename}");
+                PathGuard::check_write_path(ws_path, &path)?;
+                PermissionChecker::check_fs_write(&agent.id, perms, &path)?;
             }
             "report_read" => {
-                let filename = args.get("filename").and_then(Value::as_str).unwrap_or("");
-                let path = format!("reports/{filename}");
-                PathGuard::resolve_within_workspace(ws_path, &path)?;
-                PermissionChecker::check_fs_read(&agent.id, &agent.permissions, &path)?;
+                let path = format!("reports/{}", str_arg("filename"));
+                PathGuard::check_read_path(ws_path, &path)?;
+                PermissionChecker::check_fs_read(&agent.id, perms, &path)?;
             }
-            _ => {}
+            "report_list" => PermissionChecker::check_fs_read(&agent.id, perms, "reports")?,
+            // MCP is not implemented yet; its servers will carry their own policy
+            _ if tools.mcp.iter().any(|t| t == tool_name) => {}
+            _ => return Err(deny("unknown builtin tool")),
         }
         Ok(())
     }

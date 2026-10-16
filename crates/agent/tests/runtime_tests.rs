@@ -428,7 +428,7 @@ async fn test_cancellation_mid_tool_execution() {
     );
 
     let mut agent = create_test_agent("test-agent", "Tool agent.");
-    agent.tools.builtin.push("slow_tool".to_string());
+    agent.tools.mcp.push("slow_tool".to_string()); // a non-builtin (external) tool
 
     let conv_id = Uuid::now_v7();
     let cancel = CancellationToken::new();
@@ -607,7 +607,7 @@ async fn test_cancel_mid_tool_batch_keeps_conversation_usable() {
         None,
     );
     let mut agent = create_test_agent("test-agent", "Tool agent.");
-    agent.tools.builtin.push("slow_tool".to_string());
+    agent.tools.mcp.push("slow_tool".to_string()); // a non-builtin (external) tool
     let conv_id = Uuid::now_v7();
 
     let cancel = CancellationToken::new();

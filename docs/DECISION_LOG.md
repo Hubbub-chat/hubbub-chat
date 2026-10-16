@@ -5,6 +5,20 @@ Sắp xếp theo thứ tự thời gian (mới nhất ở trên).
 
 > **QUY TẮC:** PR/commit có thay đổi quan trọng mà KHÔNG cập nhật file này sẽ bị reject.
 
+## [2026-10-16] Policy công cụ: mặc định từ chối, cấm truy cập `data/`
+
+**Bối cảnh:**
+Đánh giá bảo mật phát hiện `ToolRunner::check_policy` mặc định *cho phép*: nhánh `_ => {}` bỏ qua mọi kiểm tra với `report_list` và mọi tool không biết; không kiểm tra tool có được gán cho agent hay không (một lời gọi bị prompt injection có thể gọi tool ngoài danh sách). `fs_list("")` liệt kê thư mục gốc workspace mà không kiểm tra quyền. Thư mục `data/` (chứa `hubbub.db`, `agents.json`) nằm trong workspace nên agent có `fs_read: ["**"]` đọc được.
+
+**Quyết định:**
+1. Tool phải nằm trong `agent.tools.builtin` hoặc `agent.tools.mcp`, nếu không thì từ chối.
+2. Builtin không có nhánh policy riêng thì từ chối (`unknown builtin tool`). Tool MCP được gán cho agent thì cho qua (MCP chưa triển khai; server MCP sẽ mang policy riêng).
+3. `report_list` cần quyền đọc `reports`; liệt kê gốc workspace cần quyền đọc toàn bộ (`**`); `report_write` kiểm tra đúng tên file thật.
+4. **Giữ nguyên vị trí `data/`** (không di chuyển DB, để không ảnh hưởng các bản cài v0.1.0) và chặn trong `PathGuard`: `check_read_path` cấm đọc, `is_protected_path` cấm ghi. So sánh đường dẫn theo cách Windows: không phân biệt hoa thường, bỏ `.` và dấu chấm/khoảng trắng cuối (`DATA/`, `./data`, `data./` đều bị chặn).
+5. Agent mặc định `analyst`, `researcher` được thêm `fs_read: ["reports/**"]` để `report_read`/`report_list` dùng được. Lưu ý: bản cài đã lưu `agents.json` giữ quyền cũ của agent đó.
+
+**Hệ quả:** Thêm builtin tool mới bắt buộc thêm nhánh trong `check_policy`, nếu không tool sẽ bị từ chối (trước đây bị cho qua âm thầm).
+
 ## [2026-10-04] Cấu hình Kết nối Model Cục bộ Qwen 2.5 Coder 7B Qua Ollama Cho Agent Developer
 
 **Bối cảnh:**
