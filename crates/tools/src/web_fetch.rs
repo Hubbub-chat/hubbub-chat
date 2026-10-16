@@ -4,6 +4,7 @@ use scraper::{Html, Selector};
 use std::time::Duration;
 
 use crate::errors::ToolError;
+use hubbub_domain::text::truncate_chars;
 use hubbub_policy::UrlGuard;
 
 pub struct WebFetchTool {
@@ -78,15 +79,20 @@ impl WebFetchTool {
             raw_body
         };
 
-        // 5. Truncate if exceeds token-friendly limit (25,000 chars)
+        // 5. Truncate if exceeds token-friendly limit
+        Ok(Self::truncate_for_llm(formatted))
+    }
+
+    /// Cap page content at 25,000 characters (not bytes, so multi-byte text never splits).
+    pub fn truncate_for_llm(formatted: String) -> String {
         const MAX_CHARS: usize = 25_000;
-        if formatted.len() > MAX_CHARS {
-            let truncated = &formatted[..MAX_CHARS];
-            Ok(format!(
+        let truncated = truncate_chars(&formatted, MAX_CHARS);
+        if truncated.len() < formatted.len() {
+            format!(
                 "{truncated}\n\n[... Nội dung trang web đã được cắt bớt do vượt quá giới hạn độ dài {MAX_CHARS} ký tự ...]"
-            ))
+            )
         } else {
-            Ok(formatted)
+            formatted
         }
     }
 

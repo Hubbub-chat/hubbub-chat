@@ -146,6 +146,8 @@ impl AgentRuntime {
                     .complete_run(run, total_prompt_tokens, total_completion_tokens)
                     .await;
             }
+            // Over budget: stop before running tools (they may fetch or write files)
+            budget.check_token_limit()?;
 
             self.handle_assistant_tool_calls(run, &mut working_messages, &text, &tool_calls)
                 .await?;
