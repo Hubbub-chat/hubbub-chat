@@ -251,3 +251,40 @@ async fn test_builtin_tool_host_fs_and_report_tools() {
     assert!(fs_list_res.success);
     assert!(fs_list_res.content.contains("reports/ai-report.md"));
 }
+
+#[tokio::test]
+async fn test_report_write_long_vietnamese_title_does_not_panic() {
+    use hubbub_workspace::LocalWorkspaceService;
+    use std::sync::Arc;
+
+    let dir = tempfile::tempdir().unwrap();
+    let ws = Arc::new(LocalWorkspaceService::new(dir.path()));
+    let host = BuiltinToolHost::with_workspace(ws, None);
+    let ctx = ToolContext {
+        agent_id: "researcher".to_string(),
+        run_id: Uuid::now_v7(),
+        workspace_root: dir.path().to_string_lossy().to_string(),
+    };
+
+    // Slug keeps non-ASCII letters; byte 50 of "a" + "ệ"* falls mid-character
+    let title = format!("A{}", "ệ".repeat(60));
+    let res = host
+        .execute(
+            "report_write",
+            serde_json::json!({ "title": title, "content": "Nội dung." }),
+            ctx,
+        )
+        .await
+        .unwrap();
+    assert!(res.success, "{}", res.content);
+    assert!(res.content.contains(&format!("a{}.md", "ệ".repeat(49))));
+}
+
+#[test]
+fn test_web_fetch_truncation_is_char_safe() {
+    let body = "ệ".repeat(30_000);
+    let out = WebFetchTool::truncate_for_llm(body);
+    assert!(out.starts_with(&"ệ".repeat(25_000)));
+    assert!(!out.starts_with(&"ệ".repeat(25_001)));
+    assert!(out.contains("cắt bớt"));
+}

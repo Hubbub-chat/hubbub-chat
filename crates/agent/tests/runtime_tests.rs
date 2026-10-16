@@ -641,3 +641,104 @@ async fn test_cancel_mid_tool_batch_keeps_conversation_usable() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_token_budget_exceeded_with_tool_calls_runs_no_tools() {
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    let event_sink = Arc::new(InMemoryEventSink::new());
+    let tool_host = Arc::new(MockToolHost::new());
+    tool_host
+        .register_simple_tool("web_search", "Tìm kiếm", "Kết quả")
+        .await;
+
+    fake_llm
+        .push_response(FakeResponse {
+            chunks: vec![
+                Ok(LlmChunk::ToolCall(
+                    hubbub_domain::ports::llm::ToolCall::new("c1", "web_search", "{}"),
+                )),
+                Ok(LlmChunk::Usage(LlmUsage {
+                    prompt_tokens: 400,
+                    completion_tokens: 200,
+                })),
+                Ok(LlmChunk::Done),
+            ],
+            chunk_delay: None,
+        })
+        .await;
+
+    let runtime = AgentRuntime::new(
+        store.clone(),
+        fake_llm.clone(),
+        tool_host.clone(),
+        event_sink.clone(),
+        None,
+    );
+    let mut agent = create_test_agent("test-agent", "Agent.");
+    agent.budget.max_tokens = 500;
+    let run_id = Uuid::now_v7();
+
+    let result = runtime
+        .execute_run_with_id(
+            Uuid::now_v7(),
+            &agent,
+            Some("Tìm"),
+            CancellationToken::new(),
+            Some(run_id),
+        )
+        .await;
+
+    assert!(matches!(result, Err(AgentError::BudgetExceeded(_))));
+    // Over budget: the requested tools must not run (they may fetch or write files)
+    assert!(tool_host.get_recorded_calls().await.is_empty());
+    let run = store.get_run(run_id).await.unwrap().unwrap();
+    assert_eq!(run.status, RunStatus::Failed);
+}
+
+#[tokio::test]
+async fn test_long_vietnamese_tool_output_does_not_panic() {
+    let store = Arc::new(SqliteStore::open_in_memory().await.unwrap());
+    let fake_llm = Arc::new(FakeLlm::new());
+    let event_sink = Arc::new(InMemoryEventSink::new());
+    let tool_host = Arc::new(MockToolHost::new());
+
+    // "ệ" is 3 bytes in UTF-8, so byte offsets 100 and 200 fall mid-character
+    let long_output = "ệ".repeat(150);
+    tool_host
+        .register_simple_tool("web_search", "Tìm kiếm", &long_output)
+        .await;
+    let args = format!("{{\"query\":\"{}\"}}", "ệ".repeat(80));
+    fake_llm.push_tool_call("call_1", "web_search", &args).await;
+    fake_llm.push_text_deltas(&["Xong."], None).await;
+
+    let runtime = AgentRuntime::new(
+        store.clone(),
+        fake_llm.clone(),
+        tool_host.clone(),
+        event_sink.clone(),
+        None,
+    );
+    let agent = create_test_agent("test-agent", "Bạn có khả năng tìm kiếm web.");
+    let run = runtime
+        .execute_run(
+            Uuid::now_v7(),
+            &agent,
+            Some("Tìm"),
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(run.status, RunStatus::Completed);
+    let summary = event_sink
+        .get_events()
+        .await
+        .into_iter()
+        .find_map(|e| match e {
+            hubbub_domain::events::RunEvent::ToolFinished { summary, .. } => Some(summary),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(summary, format!("{}...", "ệ".repeat(100)));
+}

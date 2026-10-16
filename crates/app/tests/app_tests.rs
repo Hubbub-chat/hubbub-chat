@@ -240,3 +240,28 @@ async fn test_init_fails_runs_interrupted_by_previous_process() {
     let run = store.get_run(run_id).await.unwrap().unwrap();
     assert_eq!(run.status, RunStatus::Failed);
 }
+
+#[tokio::test]
+async fn test_write_report_long_vietnamese_title_does_not_panic() {
+    let tmp = tempfile::tempdir().unwrap();
+    let config = AppConfig {
+        workspace_dir: tmp.path().to_path_buf(),
+        ..Default::default()
+    };
+    let service = AppService::init(config).await.unwrap();
+
+    // Slug keeps non-ASCII letters; byte 50 of "a" + "ệ"* falls mid-character
+    let title = format!("A{}", "ệ".repeat(60));
+    service
+        .write_report(&title, "Nội dung.", None)
+        .await
+        .unwrap();
+
+    let reports = service.list_reports().await.unwrap();
+    assert_eq!(reports.len(), 1);
+    assert!(
+        reports[0].ends_with(&format!("a{}.md", "ệ".repeat(49))),
+        "{}",
+        reports[0]
+    );
+}
