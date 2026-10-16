@@ -427,3 +427,137 @@ async fn test_malformed_json_in_sse_stream() {
 
     assert_eq!(text, "Valid 1 Valid 2");
 }
+
+fn anthropic_text_sse() -> &'static str {
+    "event: content_block_delta\n\
+     data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Xong\"}}\n\n\
+     event: message_stop\n\
+     data: {\"type\":\"message_stop\"}\n\n"
+}
+
+fn anthropic_adapter(uri: String) -> AnthropicAdapter {
+    AnthropicAdapter::new(ProviderConfig {
+        api_key: "claude-key".to_string(),
+        base_url: Some(uri),
+        timeout_s: Some(5),
+        max_retries: Some(1),
+    })
+}
+
+fn msg(role: &str, content: &str) -> LlmMessage {
+    LlmMessage {
+        role: role.to_string(),
+        content: content.to_string(),
+        tool_calls: None,
+        tool_call_id: None,
+    }
+}
+
+#[tokio::test]
+async fn test_anthropic_sends_tool_history_as_tool_use_and_tool_result_blocks() {
+    use hubbub_domain::ports::llm::ToolCall;
+
+    let mock_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/v1/messages"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(anthropic_text_sse()),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let mut assistant = msg("assistant", "Để tôi tìm.");
+    assistant.tool_calls = Some(vec![
+        ToolCall::new("toolu_a", "web_search", "{\"query\":\"a\"}"),
+        ToolCall::new("toolu_b", "web_search", ""),
+    ]);
+    let mut result_a = msg("tool", "KQ a");
+    result_a.tool_call_id = Some("toolu_a".to_string());
+    let mut result_b = msg("tool", "KQ b");
+    result_b.tool_call_id = Some("toolu_b".to_string());
+
+    let mut stream = anthropic_adapter(mock_server.uri())
+        .chat_stream(
+            vec![
+                msg("system", "Bạn là trợ lý."),
+                msg("user", "Tìm"),
+                assistant,
+                result_a,
+                result_b,
+            ],
+            vec![],
+            LlmConfig {
+                model: "claude-sonnet".to_string(),
+                max_tokens: Some(100),
+                temperature: None,
+            },
+        )
+        .await
+        .expect("stream started");
+    while stream.next().await.is_some() {}
+
+    let requests = mock_server.received_requests().await.expect("recorded");
+    let body: serde_json::Value = requests[0].body_json().expect("json body");
+    assert_eq!(body["system"], "Bạn là trợ lý.");
+    assert_eq!(
+        body["messages"],
+        serde_json::json!([
+            { "role": "user", "content": "Tìm" },
+            { "role": "assistant", "content": [
+                { "type": "text", "text": "Để tôi tìm." },
+                { "type": "tool_use", "id": "toolu_a", "name": "web_search", "input": { "query": "a" } },
+                { "type": "tool_use", "id": "toolu_b", "name": "web_search", "input": {} }
+            ]},
+            { "role": "user", "content": [
+                { "type": "tool_result", "tool_use_id": "toolu_a", "content": "KQ a" },
+                { "type": "tool_result", "tool_use_id": "toolu_b", "content": "KQ b" }
+            ]}
+        ])
+    );
+}
+
+#[tokio::test]
+async fn test_anthropic_stream_error_event_is_an_error() {
+    let mock_server = MockServer::start().await;
+    let sse_body = "event: content_block_delta\n\
+                    data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Đang\"}}\n\n\
+                    event: error\n\
+                    data: {\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}}\n\n";
+    Mock::given(method("POST"))
+        .and(path("/v1/messages"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(sse_body),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let mut stream = anthropic_adapter(mock_server.uri())
+        .chat_stream(
+            vec![msg("user", "Chào")],
+            vec![],
+            LlmConfig {
+                model: "claude-sonnet".to_string(),
+                max_tokens: Some(100),
+                temperature: None,
+            },
+        )
+        .await
+        .expect("stream started");
+
+    let mut saw_error = false;
+    while let Some(chunk) = stream.next().await {
+        if let Err(e) = chunk {
+            assert!(e.to_string().contains("Overloaded"));
+            saw_error = true;
+            break;
+        }
+    }
+    assert!(
+        saw_error,
+        "a cut-off stream must not look like a complete answer"
+    );
+}

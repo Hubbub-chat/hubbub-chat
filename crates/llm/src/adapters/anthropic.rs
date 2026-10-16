@@ -52,22 +52,7 @@ impl LlmProvider for AnthropicAdapter {
     ) -> Result<Box<dyn LlmStream>, DomainError> {
         let endpoint = self.build_endpoint();
 
-        let mut system_prompt = String::new();
-        let mut anthropic_messages = Vec::new();
-
-        for m in messages {
-            if m.role == "system" {
-                if !system_prompt.is_empty() {
-                    system_prompt.push('\n');
-                }
-                system_prompt.push_str(&m.content);
-            } else {
-                anthropic_messages.push(serde_json::json!({
-                    "role": m.role,
-                    "content": m.content,
-                }));
-            }
-        }
+        let (system_prompt, anthropic_messages) = to_anthropic_messages(messages);
 
         let max_tokens = config.max_tokens.unwrap_or(4096);
         let mut payload = serde_json::json!({
@@ -161,6 +146,68 @@ impl LlmProvider for AnthropicAdapter {
             }
         }
     }
+}
+
+/// Convert provider-neutral messages to the Messages API shape.
+///
+/// System messages go to the top-level `system` field. Assistant tool calls become
+/// `tool_use` blocks, and consecutive tool results are grouped into one `user` turn
+/// of `tool_result` blocks; Anthropic has no `tool` role.
+fn to_anthropic_messages(messages: Vec<LlmMessage>) -> (String, Vec<Value>) {
+    let mut system_prompt = String::new();
+    let mut out: Vec<Value> = Vec::new();
+    let mut tool_results: Vec<Value> = Vec::new();
+
+    for m in messages {
+        if m.role == "tool" {
+            tool_results.push(serde_json::json!({
+                "type": "tool_result",
+                "tool_use_id": m.tool_call_id.unwrap_or_default(),
+                "content": m.content,
+            }));
+            continue;
+        }
+        if !tool_results.is_empty() {
+            out.push(
+                serde_json::json!({ "role": "user", "content": std::mem::take(&mut tool_results) }),
+            );
+        }
+
+        match (m.role.as_str(), m.tool_calls) {
+            ("system", _) => {
+                if !system_prompt.is_empty() {
+                    system_prompt.push('\n');
+                }
+                system_prompt.push_str(&m.content);
+            }
+            ("assistant", Some(calls)) if !calls.is_empty() => {
+                let mut blocks = Vec::new();
+                if !m.content.is_empty() {
+                    blocks.push(serde_json::json!({ "type": "text", "text": m.content }));
+                }
+                for tc in calls {
+                    // A tool with no parameters streams no input deltas at all
+                    let input = serde_json::from_str::<Value>(&tc.arguments)
+                        .ok()
+                        .filter(Value::is_object)
+                        .unwrap_or_else(|| serde_json::json!({}));
+                    blocks.push(serde_json::json!({
+                        "type": "tool_use",
+                        "id": tc.id,
+                        "name": tc.name,
+                        "input": input,
+                    }));
+                }
+                out.push(serde_json::json!({ "role": "assistant", "content": blocks }));
+            }
+            (role, _) => out.push(serde_json::json!({ "role": role, "content": m.content })),
+        }
+    }
+    if !tool_results.is_empty() {
+        out.push(serde_json::json!({ "role": "user", "content": tool_results }));
+    }
+
+    (system_prompt, out)
 }
 
 pub struct AnthropicStream {
@@ -289,6 +336,17 @@ impl LlmStream for AnthropicStream {
                                     completion_tokens: out_tok,
                                 })));
                             }
+                        }
+                        "error" => {
+                            // e.g. overloaded_error mid-stream: the answer is incomplete
+                            let message = parsed
+                                .get("error")
+                                .and_then(|e| e.get("message"))
+                                .and_then(Value::as_str)
+                                .unwrap_or("unknown error");
+                            self.finished = true;
+                            self.pending_chunks.clear();
+                            return Some(Err(LlmError::Stream(message.to_string()).into()));
                         }
                         "message_stop" => {
                             if let Some(tc) = self.current_tool_call.take() {
