@@ -7,6 +7,7 @@ use hubbub_domain::entities::audit_log::AuditLog;
 use hubbub_domain::entities::document::Document;
 use hubbub_domain::ports::store::Store;
 use hubbub_domain::ports::workspace_service::WorkspaceService;
+use hubbub_domain::text::truncate_chars;
 use hubbub_workspace::{WorkspaceWatcher, WorkspaceWatcherSink};
 
 use crate::errors::AppError;
@@ -113,8 +114,8 @@ impl ReportService {
         let trimmed = cleaned.trim_matches('-').to_string();
         if trimmed.is_empty() {
             format!("report-{}", &Uuid::now_v7().to_string()[..8])
-        } else if trimmed.len() > 50 {
-            trimmed[..50].trim_matches('-').to_string()
+        } else if trimmed.chars().count() > 50 {
+            truncate_chars(&trimmed, 50).trim_matches('-').to_string()
         } else {
             trimmed
         }
