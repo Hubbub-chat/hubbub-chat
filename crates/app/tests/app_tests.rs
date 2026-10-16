@@ -186,3 +186,28 @@ async fn test_app_service_workspace_and_reports() {
     let content = service.read_report("test-report.md").await.unwrap();
     assert!(content.contains("# Báo cáo Test"));
 }
+
+#[tokio::test]
+async fn test_write_report_long_vietnamese_title_does_not_panic() {
+    let tmp = tempfile::tempdir().unwrap();
+    let config = AppConfig {
+        workspace_dir: tmp.path().to_path_buf(),
+        ..Default::default()
+    };
+    let service = AppService::init(config).await.unwrap();
+
+    // Slug keeps non-ASCII letters; byte 50 of "a" + "ệ"* falls mid-character
+    let title = format!("A{}", "ệ".repeat(60));
+    service
+        .write_report(&title, "Nội dung.", None)
+        .await
+        .unwrap();
+
+    let reports = service.list_reports().await.unwrap();
+    assert_eq!(reports.len(), 1);
+    assert!(
+        reports[0].ends_with(&format!("a{}.md", "ệ".repeat(49))),
+        "{}",
+        reports[0]
+    );
+}
