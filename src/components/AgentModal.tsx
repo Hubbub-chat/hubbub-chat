@@ -99,21 +99,21 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/[0.07] bg-[#121622]/80">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
               <Bot className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-zinc-100">
+              <h2 className="text-sm font-semibold text-fg">
                 {existingAgent ? 'Chỉnh sửa Tác tử (Agent)' : 'Tạo Tác tử Mới theo Chức năng'}
               </h2>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-fg-muted">
                 Một mô hình có thể dùng để tạo nhiều Agent cho từng nhiệm vụ riêng biệt
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-200 p-1.5 rounded-xl hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="text-fg-muted hover:text-fg p-1.5 rounded-xl hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -123,24 +123,24 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs">
           {/* Agent Name */}
           <div>
-            <label className="block font-medium text-zinc-200 mb-1">Tên Tác tử (Chức năng nhiệm vụ)</label>
+            <label className="block font-medium text-fg mb-1">Tên Tác tử (Chức năng nhiệm vụ)</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ví dụ: Chuyên gia DevOps, Dịch thuật Đa ngữ, Reviewer Mã Nguồn..."
-              className="w-full bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/60 rounded-xl px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-hidden"
+              className="w-full bg-[#080a10] border border-white/[0.08] focus:border-primary/60 rounded-xl px-3 py-2 text-fg placeholder:text-fg-subtle focus:outline-hidden"
             />
           </div>
 
           {/* Model Selection */}
           <div>
-            <label className="block font-medium text-zinc-200 mb-1">Mô hình AI vận hành (Model)</label>
+            <label className="block font-medium text-fg mb-1">Mô hình AI vận hành (Model)</label>
             <div className="flex flex-col sm:flex-row gap-2">
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="flex-1 bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/60 rounded-xl px-3 py-2 text-zinc-100 focus:outline-hidden font-mono text-xs"
+                className="flex-1 bg-[#080a10] border border-white/[0.08] focus:border-primary/60 rounded-xl px-3 py-2 text-fg focus:outline-hidden font-mono text-xs"
               >
                 {POPULAR_MODELS.map((m) => (
                   <option key={m} value={m}>
@@ -153,14 +153,14 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
                 placeholder="Hoặc tự gõ tên model..."
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full sm:w-48 bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/60 rounded-xl px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-hidden font-mono text-xs"
+                className="w-full sm:w-48 bg-[#080a10] border border-white/[0.08] focus:border-primary/60 rounded-xl px-3 py-2 text-fg placeholder:text-fg-subtle focus:outline-hidden font-mono text-xs"
               />
             </div>
           </div>
 
           {/* System Prompt */}
           <div>
-            <label className="block font-medium text-zinc-200 mb-1">
+            <label className="block font-medium text-fg mb-1">
               Chỉ dẫn Nhiệm vụ & Vai trò (System Prompt)
             </label>
             <textarea
@@ -168,14 +168,14 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="Mô tả chi tiết nhiệm vụ, phong cách trả lời và kiến thức chuyên sâu của tác tử này..."
-              className="w-full bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/60 rounded-xl px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-hidden leading-relaxed resize-y"
+              className="w-full bg-[#080a10] border border-white/[0.08] focus:border-primary/60 rounded-xl px-3 py-2 text-fg placeholder:text-fg-subtle focus:outline-hidden leading-relaxed resize-y"
             />
           </div>
 
           {/* Tools Selection */}
           <div>
-            <label className="block font-medium text-zinc-200 mb-1.5 flex items-center gap-1.5">
-              <Wrench className="w-3.5 h-3.5 text-indigo-400" />
+            <label className="block font-medium text-fg mb-1.5 flex items-center gap-1.5">
+              <Wrench className="w-3.5 h-3.5 text-primary" />
               Công cụ cho phép tác tử sử dụng
             </label>
             <div className="grid grid-cols-1 gap-1.5 p-2 bg-[#080a10] border border-white/[0.06] rounded-xl">
@@ -189,13 +189,13 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
                   >
                     <div
                       className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${
-                        checked ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-white/[0.12] bg-[#121622]'
+                        checked ? 'bg-primary border-primary text-on-primary' : 'border-white/[0.12] bg-[#121622]'
                       }`}
                     >
                       {checked && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
-                    <span className="text-zinc-300 font-mono text-[11px] font-semibold">{tool.id}</span>
-                    <span className="text-zinc-400 text-[11px] truncate">— {tool.label}</span>
+                    <span className="text-fg-muted font-mono text-[11px] font-semibold">{tool.id}</span>
+                    <span className="text-fg-muted text-[11px] truncate">— {tool.label}</span>
                   </label>
                 );
               })}
@@ -207,14 +207,14 @@ export const AgentModal = ({ isOpen, onClose, onSaveAgent, existingAgent }: Agen
         <div className="p-3.5 sm:p-4 border-t border-white/[0.07] bg-[#121622]/90 flex items-center justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] text-zinc-300 rounded-xl text-xs font-medium border border-white/[0.06] transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] text-fg-muted rounded-xl text-xs font-medium border border-white/[0.06] transition-colors cursor-pointer"
           >
             Hủy
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving || !name.trim()}
-            className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-40 text-white rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer inner-top-glow shadow-xs"
+            className="px-4 py-1.5 bg-primary hover:bg-primary-strong disabled:opacity-40 text-on-primary rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer inner-top-glow shadow-xs"
           >
             {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             Lưu Tác tử

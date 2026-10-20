@@ -29,7 +29,7 @@ export const SKILLS_METADATA = [
     name: 'Tìm kiếm Web Thời gian thực',
     description: 'Truy vấn thông tin cập nhật trên Internet qua Google & Tavily',
     icon: Globe,
-    color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+    color: 'text-primary bg-primary/10 border-primary/20',
   },
   {
     id: 'web_fetch',
@@ -57,7 +57,7 @@ export const SKILLS_METADATA = [
     name: 'Soạn thảo Báo cáo Markdown',
     description: 'Tạo và lưu trữ báo cáo hoàn chỉnh vào thư mục reports/',
     icon: FileEdit,
-    color: 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20',
+    color: 'text-primary bg-primary/10 border-primary/20',
   },
   {
     id: 'report_read',
@@ -143,21 +143,21 @@ export const AgentSkillsDrawer = ({
         {/* Header */}
         <div className="p-4 border-b border-white/[0.07] flex items-center justify-between bg-[#121622]/80">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-xs">
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-fg flex items-center gap-2">
                 <span>Cấu hình & Kỹ năng Tác tử</span>
               </h2>
-              <p className="text-[11px] text-zinc-400 font-mono">
+              <p className="text-[11px] text-fg-muted font-mono">
                 ID: {agent.id}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
+            className="p-1.5 text-fg-muted hover:text-fg hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -175,26 +175,26 @@ export const AgentSkillsDrawer = ({
           {/* Name & Model */}
           <div className="space-y-3 p-3.5 bg-[#121622]/60 border border-white/[0.06] rounded-xl">
             <div>
-              <label className="block text-[11px] font-medium text-zinc-300 mb-1">
+              <label className="block text-[11px] font-medium text-fg-muted mb-1">
                 Tên Tác tử (Vai trò nhiệm vụ)
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/80 rounded-xl px-3 py-2 text-zinc-100 placeholder:text-zinc-500 focus:outline-hidden text-xs"
+                className="w-full bg-[#080a10] border border-white/[0.08] focus:border-primary/80 rounded-xl px-3 py-2 text-fg placeholder:text-fg-subtle focus:outline-hidden text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-zinc-300 mb-1">
+              <label className="block text-[11px] font-medium text-fg-muted mb-1">
                 Mô hình AI vận hành (Model)
               </label>
               <div className="flex gap-2">
                 <select
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  className="flex-1 bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/80 rounded-xl px-3 py-2 text-zinc-100 focus:outline-hidden font-mono text-[11px]"
+                  className="flex-1 bg-[#080a10] border border-white/[0.08] focus:border-primary/80 rounded-xl px-3 py-2 text-fg focus:outline-hidden font-mono text-[11px]"
                 >
                   {POPULAR_MODELS.map((m) => (
                     <option key={m} value={m}>
@@ -207,7 +207,7 @@ export const AgentSkillsDrawer = ({
                   placeholder="Custom model..."
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  className="w-32 bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/80 rounded-xl px-2.5 py-1.5 text-zinc-100 placeholder:text-zinc-500 focus:outline-hidden font-mono text-[11px]"
+                  className="w-32 bg-[#080a10] border border-white/[0.08] focus:border-primary/80 rounded-xl px-2.5 py-1.5 text-fg placeholder:text-fg-subtle focus:outline-hidden font-mono text-[11px]"
                 />
               </div>
             </div>
@@ -216,8 +216,8 @@ export const AgentSkillsDrawer = ({
           {/* Skills / Tools Selector */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] font-semibold text-zinc-200 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <label className="text-[11px] font-semibold text-fg flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 <span>Bộ Kỹ năng & Công cụ cho phép ({selectedTools.length})</span>
               </label>
             </div>
@@ -232,7 +232,7 @@ export const AgentSkillsDrawer = ({
                     onClick={() => toggleTool(skill.id)}
                     className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
                       isEnabled
-                        ? 'bg-indigo-950/20 border-indigo-500/40 hover:border-indigo-500/60'
+                        ? 'bg-primary/20 border-primary/40 hover:border-primary/60'
                         : 'bg-[#121622]/40 border-white/5 hover:border-white/10 opacity-75 hover:opacity-100'
                     }`}
                   >
@@ -240,7 +240,7 @@ export const AgentSkillsDrawer = ({
                       className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                         isEnabled
                           ? skill.color
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                          : 'bg-zinc-900 border-zinc-800 text-fg-subtle'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -248,23 +248,23 @@ export const AgentSkillsDrawer = ({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className={`font-medium text-xs ${isEnabled ? 'text-zinc-100' : 'text-zinc-400'}`}>
+                        <span className={`font-medium text-xs ${isEnabled ? 'text-fg' : 'text-fg-muted'}`}>
                           {skill.name}
                         </span>
                         <div
                           className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                             isEnabled
-                              ? 'bg-indigo-600 border-indigo-500 text-white'
+                              ? 'bg-primary border-primary text-on-primary'
                               : 'border-zinc-700 bg-zinc-900'
                           }`}
                         >
                           {isEnabled && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                       </div>
-                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
+                      <p className="text-[11px] text-fg-muted mt-0.5 leading-relaxed">
                         {skill.description}
                       </p>
-                      <span className="inline-block mt-1 font-mono text-[10px] text-zinc-500">
+                      <span className="inline-block mt-1 font-mono text-[10px] text-fg-subtle">
                         tool: {skill.id}
                       </span>
                     </div>
@@ -276,7 +276,7 @@ export const AgentSkillsDrawer = ({
 
           {/* System Prompt Instruction */}
           <div>
-            <label className="block text-[11px] font-semibold text-zinc-200 mb-1.5 flex items-center gap-1.5">
+            <label className="block text-[11px] font-semibold text-fg mb-1.5 flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
               <span>Chỉ dẫn Chuyên môn & Quy tắc (System Prompt)</span>
             </label>
@@ -285,28 +285,28 @@ export const AgentSkillsDrawer = ({
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="Quy tắc trả lời, phong cách tư duy và phạm vi chuyên sâu của tác tử này..."
-              className="w-full bg-[#0a0c12] border border-white/10 focus:border-indigo-500/80 rounded-xl p-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-hidden leading-relaxed text-xs font-sans resize-y"
+              className="w-full bg-[#0a0c12] border border-white/10 focus:border-primary/80 rounded-xl p-3 text-fg placeholder:text-fg-subtle focus:outline-hidden leading-relaxed text-xs font-sans resize-y"
             />
           </div>
 
           {/* Security & Sandbox Policy Badges */}
           <div className="p-3.5 bg-[#141824]/40 border border-white/5 rounded-xl space-y-2">
-            <span className="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-fg-muted flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>Chính sách Bảo mật & Giới hạn Ngân sách</span>
             </span>
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 pt-1">
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-fg-muted pt-1">
               <div className="p-2 bg-[#0a0c12] rounded-lg border border-white/5">
-                <span className="text-zinc-500 block text-[10px]">Tối đa số bước:</span>
-                <span className="font-semibold text-zinc-200">{agent.budget.max_steps} steps</span>
+                <span className="text-fg-subtle block text-[10px]">Tối đa số bước:</span>
+                <span className="font-semibold text-fg">{agent.budget.max_steps} steps</span>
               </div>
               <div className="p-2 bg-[#0a0c12] rounded-lg border border-white/5">
-                <span className="text-zinc-500 block text-[10px]">Thời gian tối đa:</span>
-                <span className="font-semibold text-zinc-200">{agent.budget.timeout_s}s</span>
+                <span className="text-fg-subtle block text-[10px]">Thời gian tối đa:</span>
+                <span className="font-semibold text-fg">{agent.budget.timeout_s}s</span>
               </div>
               <div className="p-2 bg-[#0a0c12] rounded-lg border border-white/5 col-span-2">
-                <span className="text-zinc-500 block text-[10px]">Giới hạn Token & Chi phí:</span>
-                <span className="font-semibold text-zinc-200 font-mono">
+                <span className="text-fg-subtle block text-[10px]">Giới hạn Token & Chi phí:</span>
+                <span className="font-semibold text-fg font-mono">
                   {agent.budget.max_tokens.toLocaleString()} tokens • ${agent.budget.max_cost_usd}
                 </span>
               </div>
@@ -324,7 +324,7 @@ export const AgentSkillsDrawer = ({
               setSelectedTools(agent.tools.builtin || []);
             }}
             title="Khôi phục trạng thái ban đầu"
-            className="px-3 py-2 bg-white/[0.05] hover:bg-white/[0.09] text-zinc-300 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-white/[0.06]"
+            className="px-3 py-2 bg-white/[0.05] hover:bg-white/[0.09] text-fg-muted rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-white/[0.06]"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Hoàn tác</span>
@@ -333,14 +333,14 @@ export const AgentSkillsDrawer = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3.5 py-2 text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-colors cursor-pointer"
+              className="px-3.5 py-2 text-fg-muted hover:text-fg text-xs font-medium transition-colors cursor-pointer"
             >
               Đóng
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-40 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/25 flex items-center gap-1.5 transition-all cursor-pointer inner-top-glow"
+              className="px-4 py-2 bg-primary hover:bg-primary-strong disabled:opacity-40 text-on-primary rounded-xl text-xs font-semibold shadow-md shadow-primary-strong/25 flex items-center gap-1.5 transition-all cursor-pointer inner-top-glow"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{isSaving ? 'Đang lưu...' : 'Lưu Tác tử'}</span>

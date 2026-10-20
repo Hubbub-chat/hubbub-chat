@@ -65,18 +65,18 @@ export const MilkdownEditor: React.FC<MilkdownEditorProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-950 border-b border-zinc-800 text-xs text-zinc-400">
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-950 border-b border-zinc-800 text-xs text-fg-muted">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
           <span>Milkdown Editor (ProseMirror Engine) {isReady ? '— Đã sẵn sàng' : '— Đang nạp...'}</span>
         </div>
-        <div className="text-zinc-500">
+        <div className="text-fg-subtle">
           Độ dài: {content.length} ký tự
         </div>
       </div>
       <div
         ref={editorRef}
-        className="flex-1 p-6 overflow-y-auto milkdown-container focus:outline-none text-zinc-200"
+        className="flex-1 p-6 overflow-y-auto milkdown-container focus:outline-none text-fg"
       />
     </div>
   );

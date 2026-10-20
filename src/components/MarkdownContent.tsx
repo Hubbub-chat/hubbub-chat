@@ -18,11 +18,11 @@ const CodeBlock = ({ language, codeString }: { language: string; codeString: str
 
   return (
     <div className="my-3 rounded-xl overflow-hidden border border-white/[0.08] bg-[#0a0c12] shadow-md shadow-black/30">
-      <div className="bg-[#121520] px-3.5 py-1.5 text-[11px] font-mono text-zinc-400 border-b border-white/[0.06] flex justify-between items-center select-none">
-        <span className="text-zinc-300 font-semibold">{language || 'code'}</span>
+      <div className="bg-[#121520] px-3.5 py-1.5 text-[11px] font-mono text-fg-muted border-b border-white/[0.06] flex justify-between items-center select-none">
+        <span className="text-fg-muted font-semibold">{language || 'code'}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-white/[0.06] text-fg-muted hover:text-fg transition-colors cursor-pointer"
         >
           {copied ? (
             <>
@@ -50,26 +50,26 @@ export const MarkdownContent = ({ content }: MarkdownContentProps) => {
       remarkPlugins={[remarkGfm]}
       components={{
         h1: ({ children }) => (
-          <h1 className="text-base font-bold text-zinc-100 mt-4 mb-2 pb-1.5 border-b border-white/[0.08]">
+          <h1 className="text-base font-bold text-fg mt-4 mb-2 pb-1.5 border-b border-white/[0.08]">
             {children}
           </h1>
         ),
         h2: ({ children }) => (
-          <h2 className="text-sm font-semibold text-zinc-100 mt-3.5 mb-1.5">{children}</h2>
+          <h2 className="text-sm font-semibold text-fg mt-3.5 mb-1.5">{children}</h2>
         ),
         h3: ({ children }) => (
-          <h3 className="text-xs font-semibold text-zinc-200 mt-2.5 mb-1">{children}</h3>
+          <h3 className="text-xs font-semibold text-fg mt-2.5 mb-1">{children}</h3>
         ),
-        p: ({ children }) => <p className="mb-2.5 leading-relaxed text-zinc-200 font-normal">{children}</p>,
+        p: ({ children }) => <p className="mb-2.5 leading-relaxed text-fg font-normal">{children}</p>,
         ul: ({ children }) => (
-          <ul className="list-disc pl-5 mb-2.5 space-y-1 text-zinc-200">{children}</ul>
+          <ul className="list-disc pl-5 mb-2.5 space-y-1 text-fg">{children}</ul>
         ),
         ol: ({ children }) => (
-          <ol className="list-decimal pl-5 mb-2.5 space-y-1 text-zinc-200">{children}</ol>
+          <ol className="list-decimal pl-5 mb-2.5 space-y-1 text-fg">{children}</ol>
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-indigo-500/80 pl-3.5 py-1.5 italic text-zinc-400 my-2.5 bg-white/[0.02] rounded-r-lg">
+          <blockquote className="border-l-2 border-primary/80 pl-3.5 py-1.5 italic text-fg-muted my-2.5 bg-white/[0.02] rounded-r-lg">
             {children}
           </blockquote>
         ),
@@ -90,13 +90,13 @@ export const MarkdownContent = ({ content }: MarkdownContentProps) => {
         },
         table: ({ children }) => (
           <div className="my-3 overflow-x-auto rounded-xl border border-white/[0.08]">
-            <table className="min-w-full divide-y divide-white/[0.08] text-xs text-zinc-200">
+            <table className="min-w-full divide-y divide-white/[0.08] text-xs text-fg">
               {children}
             </table>
           </div>
         ),
         th: ({ children }) => (
-          <th className="bg-[#121520] px-3.5 py-2 text-left font-semibold text-zinc-300 border-b border-white/[0.08]">
+          <th className="bg-[#121520] px-3.5 py-2 text-left font-semibold text-fg-muted border-b border-white/[0.08]">
             {children}
           </th>
         ),
@@ -108,7 +108,7 @@ export const MarkdownContent = ({ content }: MarkdownContentProps) => {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors"
+            className="text-primary hover:text-primary-soft underline underline-offset-2 transition-colors"
           >
             {children}
           </a>

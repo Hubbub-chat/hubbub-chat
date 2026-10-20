@@ -29,7 +29,7 @@ export function BenchmarkVirtualTab() {
 
   return (
     <div className="flex-1 p-8 flex flex-col overflow-hidden max-w-4xl mx-auto w-full">
-      <h2 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2 mb-4 shrink-0">
+      <h2 className="text-2xl font-bold tracking-tight text-fg flex items-center gap-2 mb-4 shrink-0">
         <Layers className="w-6 h-6 text-sky-400" />
         Benchmark Ảo Hóa 1.000 Tin Nhắn
       </h2>
@@ -60,9 +60,9 @@ export function BenchmarkVirtualTab() {
                 className="py-1"
               >
                 <div className="p-2.5 bg-zinc-900 border border-zinc-800/80 rounded-lg text-xs flex justify-between">
-                  <span className="font-semibold text-indigo-400">{item.role}:</span>
-                  <span className="text-zinc-300 flex-1 px-3 truncate">{item.content}</span>
-                  <span className="text-zinc-500 font-mono text-[10px]">#{item.id}</span>
+                  <span className="font-semibold text-primary">{item.role}:</span>
+                  <span className="text-fg-muted flex-1 px-3 truncate">{item.content}</span>
+                  <span className="text-fg-subtle font-mono text-[10px]">#{item.id}</span>
                 </div>
               </div>
             );
