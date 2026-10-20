@@ -21,9 +21,10 @@ import type { WorkspaceDocument, AuditLog } from '../types';
 
 interface WorkspaceReportsViewProps {
   onBackToChat: () => void;
+  initialFile?: string | null;
 }
 
-export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps) => {
+export const WorkspaceReportsView = ({ onBackToChat, initialFile }: WorkspaceReportsViewProps) => {
   const [activeTab, setActiveTab] = useState<'reports' | 'audit'>('reports');
 
   // Reports / Documents state
@@ -94,6 +95,12 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
     }
   };
 
+  // Open the file requested by the chat documents panel
+  useEffect(() => {
+    if (initialFile) handleSelectFile(initialFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFile]);
+
   // Save report
   const handleSaveReport = async () => {
     if (!selectedFile) return;
@@ -135,13 +142,13 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#08090d] text-zinc-100 select-none overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-[#08090d] text-fg select-none overflow-hidden">
       {/* Top Header */}
       <div className="h-14 sm:h-16 border-b border-white/[0.06] px-4 sm:px-6 flex items-center justify-between bg-[#0a0c12]/85 backdrop-blur-md">
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={onBackToChat}
-            className="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="text-xs text-fg-muted hover:text-fg flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             ← Quay lại
           </button>
@@ -151,8 +158,8 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
               onClick={() => setActiveTab('reports')}
               className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                 activeTab === 'reports'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-primary hover:bg-primary-strong text-on-primary shadow-xs'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               <FileText className="w-3.5 h-3.5 inline mr-1.5" />
@@ -165,8 +172,8 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
               }}
               className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                 activeTab === 'audit'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-primary hover:bg-primary-strong text-on-primary shadow-xs'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               <Shield className="w-3.5 h-3.5 inline mr-1.5" />
@@ -188,7 +195,7 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
               else loadAuditLogs();
             }}
             title="Làm mới"
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
+            className="p-1.5 text-fg-muted hover:text-fg hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -203,7 +210,7 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
             {/* Search Bar */}
             <div className="p-3 border-b border-white/[0.06] flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-fg-muted absolute left-2.5 top-2.5" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm FTS5..."
@@ -212,13 +219,13 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                     setSearchQuery(e.target.value);
                     loadDocuments(e.target.value);
                   }}
-                  className="w-full bg-[#10131d] border border-white/[0.07] rounded-xl pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500/60 transition-colors"
+                  className="w-full bg-[#10131d] border border-white/[0.07] rounded-xl pl-8 pr-3 py-1.5 text-xs text-fg placeholder-fg-subtle focus:outline-hidden focus:border-primary/60 transition-colors"
                 />
               </div>
               <button
                 onClick={() => setIsCreating(true)}
                 title="Tạo báo cáo mới"
-                className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors shrink-0 cursor-pointer shadow-xs"
+                className="p-2 bg-primary hover:bg-primary-strong text-on-primary rounded-xl transition-colors shrink-0 cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -226,27 +233,27 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
 
             {/* Create New Modal / Inline Form */}
             {isCreating && (
-              <div className="p-3 border-b border-indigo-500/30 bg-indigo-950/20 space-y-2">
-                <div className="text-[11px] font-medium text-indigo-300">Tên báo cáo mới:</div>
+              <div className="p-3 border-b border-primary/30 bg-primary/20 space-y-2">
+                <div className="text-[11px] font-medium text-primary-soft">Tên báo cáo mới:</div>
                 <input
                   type="text"
                   placeholder="Ví dụ: Nghiên cứu thị trường 2026"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateNew()}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-2.5 py-1 text-xs text-zinc-100 focus:outline-none focus:border-indigo-400"
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-2.5 py-1 text-xs text-fg focus:outline-none focus:border-primary"
                   autoFocus
                 />
                 <div className="flex justify-end gap-1.5 pt-1">
                   <button
                     onClick={() => setIsCreating(false)}
-                    className="px-2 py-0.5 text-[11px] text-zinc-400 hover:text-zinc-200"
+                    className="px-2 py-0.5 text-[11px] text-fg-muted hover:text-fg"
                   >
                     Huỷ
                   </button>
                   <button
                     onClick={handleCreateNew}
-                    className="px-2.5 py-0.5 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium"
+                    className="px-2.5 py-0.5 text-[11px] bg-primary hover:bg-primary-strong text-on-primary rounded font-medium"
                   >
                     Tạo
                   </button>
@@ -257,12 +264,12 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
             {/* Document List */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {isLoading ? (
-                <div className="p-4 text-center text-xs text-zinc-400">Đang tải tài liệu...</div>
+                <div className="p-4 text-center text-xs text-fg-muted">Đang tải tài liệu...</div>
               ) : documents.length === 0 && reportsList.length === 0 ? (
-                <div className="p-6 text-center text-xs text-zinc-400 space-y-2">
-                  <FileCode className="w-8 h-8 text-zinc-600 mx-auto" />
+                <div className="p-6 text-center text-xs text-fg-muted space-y-2">
+                  <FileCode className="w-8 h-8 text-fg-subtle mx-auto" />
                   <p>Chưa có báo cáo nào trong Workspace.</p>
-                  <p className="text-[11px] text-zinc-400">
+                  <p className="text-[11px] text-fg-muted">
                     Agent có thể tự động viết báo cáo bằng công cụ report_write hoặc bạn có thể tạo mới tại đây.
                   </p>
                 </div>
@@ -275,14 +282,14 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                       onClick={() => handleSelectFile(doc.path)}
                       className={`w-full text-left p-2.5 rounded-xl text-xs transition-colors flex items-start gap-2.5 cursor-pointer ${
                         active
-                          ? 'bg-[#151926] border border-indigo-500/35 text-indigo-200 shadow-xs inner-top-glow'
-                          : 'text-zinc-300 hover:text-zinc-100 hover:bg-white/[0.04] border border-transparent'
+                          ? 'bg-[#151926] border border-primary/35 text-primary-soft shadow-xs inner-top-glow'
+                          : 'text-fg-muted hover:text-fg hover:bg-white/[0.04] border border-transparent'
                       }`}
                     >
-                      <FileText className={`w-4 h-4 mt-0.5 shrink-0 ${active ? 'text-indigo-400' : 'text-zinc-400'}`} />
+                      <FileText className={`w-4 h-4 mt-0.5 shrink-0 ${active ? 'text-primary' : 'text-fg-muted'}`} />
                       <div className="truncate flex-1">
                         <div className="truncate font-medium">{doc.title || doc.path}</div>
-                        <div className="text-[10px] text-zinc-400 truncate flex items-center gap-2 mt-1">
+                        <div className="text-[10px] text-fg-muted truncate flex items-center gap-2 mt-1">
                           <span className="flex items-center gap-1 font-mono">
                             <HardDrive className="w-3 h-3" />
                             {(doc.size_bytes / 1024).toFixed(1)} KB
@@ -306,11 +313,11 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                       onClick={() => handleSelectFile(filename)}
                       className={`w-full text-left p-2.5 rounded-xl text-xs transition-colors flex items-center gap-2.5 cursor-pointer ${
                         active
-                          ? 'bg-[#151926] border border-indigo-500/35 text-indigo-200 shadow-xs inner-top-glow'
-                          : 'text-zinc-300 hover:text-zinc-100 hover:bg-white/[0.04] border border-transparent'
+                          ? 'bg-[#151926] border border-primary/35 text-primary-soft shadow-xs inner-top-glow'
+                          : 'text-fg-muted hover:text-fg hover:bg-white/[0.04] border border-transparent'
                       }`}
                     >
-                      <FileText className="w-4 h-4 text-zinc-400 shrink-0" />
+                      <FileText className="w-4 h-4 text-fg-muted shrink-0" />
                       <span className="truncate flex-1 font-medium">{filename}</span>
                     </button>
                   );
@@ -326,8 +333,8 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                 {/* File Header Actions */}
                 <div className="h-12 border-b border-white/[0.06] px-4 sm:px-6 flex items-center justify-between bg-[#0a0c12]/60">
                   <div className="flex items-center gap-2 truncate">
-                    <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
-                    <span className="text-xs font-semibold text-zinc-200 truncate">{selectedFile}</span>
+                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-xs font-semibold text-fg truncate">{selectedFile}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -335,8 +342,8 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                       onClick={() => setIsEditing(!isEditing)}
                       className={`px-3 py-1.5 text-xs font-medium rounded-xl border flex items-center gap-1.5 transition-colors cursor-pointer ${
                         isEditing
-                          ? 'bg-[#151926] border-indigo-500/40 text-indigo-200'
-                          : 'bg-[#10131d] border-white/[0.08] text-zinc-400 hover:text-zinc-200'
+                          ? 'bg-[#151926] border-primary/40 text-primary-soft'
+                          : 'bg-[#10131d] border-white/[0.08] text-fg-muted hover:text-fg'
                       }`}
                     >
                       {isEditing ? (
@@ -353,7 +360,7 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                     {isEditing && (
                       <button
                         onClick={handleSaveReport}
-                        className="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer inner-top-glow"
+                        className="px-3.5 py-1.5 bg-primary hover:bg-primary-strong text-on-primary rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer inner-top-glow"
                       >
                         <Save className="w-3.5 h-3.5" /> Lưu báo cáo
                       </button>
@@ -375,10 +382,10 @@ export const WorkspaceReportsView = ({ onBackToChat }: WorkspaceReportsViewProps
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-400">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-fg-muted">
                 <FileText className="w-12 h-12 text-zinc-700 mb-3" />
-                <p className="text-sm font-medium text-zinc-300">Chọn một báo cáo để xem hoặc chỉnh sửa</p>
-                <p className="text-xs text-zinc-400 mt-1 max-w-md">
+                <p className="text-sm font-medium text-fg-muted">Chọn một báo cáo để xem hoặc chỉnh sửa</p>
+                <p className="text-xs text-fg-muted mt-1 max-w-md">
                   Mọi báo cáo được lưu trong thư mục Workspace reports/ và tự động được lập chỉ mục FTS5 để tìm kiếm toàn văn siêu tốc.
                 </p>
               </div>

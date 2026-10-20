@@ -31,9 +31,9 @@ export const AgentsHubView = ({
   const getAgentIcon = (id: string) => {
     switch (id) {
       case 'analyst':
-        return <Sparkles className="w-5 h-5 text-indigo-400" />;
+        return <Sparkles className="w-5 h-5 text-primary" />;
       case 'developer':
-        return <Code2 className="w-5 h-5 text-cyan-400" />;
+        return <Code2 className="w-5 h-5 text-primary" />;
       case 'researcher':
         return <Search className="w-5 h-5 text-blue-400" />;
       case 'writer':
@@ -43,14 +43,14 @@ export const AgentsHubView = ({
       case 'librarian':
         return <BookOpen className="w-5 h-5 text-emerald-400" />;
       default:
-        return <Bot className="w-5 h-5 text-zinc-400" />;
+        return <Bot className="w-5 h-5 text-fg-muted" />;
     }
   };
 
   const getToolBadge = (toolId: string) => {
     switch (toolId) {
       case 'web_search':
-        return { label: 'Web Search', icon: Globe, color: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/20' };
+        return { label: 'Web Search', icon: Globe, color: 'text-primary bg-primary/40 border-primary/20' };
       case 'web_fetch':
         return { label: 'Web Fetch', icon: Globe, color: 'text-blue-400 bg-blue-950/40 border-blue-500/20' };
       case 'fs_read':
@@ -58,9 +58,9 @@ export const AgentsHubView = ({
         return { label: 'Files', icon: FileCode, color: 'text-emerald-400 bg-emerald-950/40 border-emerald-500/20' };
       case 'report_write':
       case 'report_read':
-        return { label: 'Reports', icon: FileEdit, color: 'text-indigo-400 bg-indigo-950/40 border-indigo-500/20' };
+        return { label: 'Reports', icon: FileEdit, color: 'text-primary bg-primary/40 border-primary/20' };
       default:
-        return { label: toolId, icon: Sparkles, color: 'text-zinc-400 bg-zinc-900 border-zinc-700' };
+        return { label: toolId, icon: Sparkles, color: 'text-fg-muted bg-zinc-900 border-zinc-700' };
     }
   };
 
@@ -69,17 +69,17 @@ export const AgentsHubView = ({
       {/* Top Header */}
       <header className="py-3 px-4 sm:px-6 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 bg-[#0a0c12]/85 backdrop-blur-md">
         <div>
-          <h2 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
+          <h2 className="text-sm sm:text-base font-bold text-fg flex items-center gap-2">
             <span>Trung tâm Tác tử & Kỹ năng (Agents & Skills Hub)</span>
           </h2>
-          <p className="text-[11px] text-zinc-400">
+          <p className="text-[11px] text-fg-muted">
             Mỗi Tác tử sở hữu vai trò chuyên biệt, bộ công cụ riêng và chính sách bảo mật kiểm soát chặt chẽ
           </p>
         </div>
 
         <button
           onClick={onOpenCreateAgent}
-          className="self-start sm:self-auto px-4 py-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:brightness-110 active:scale-[0.98] text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/25 flex items-center gap-1.5 transition-all cursor-pointer inner-top-glow"
+          className="self-start sm:self-auto px-4 py-2 bg-primary hover:bg-primary-strong hover:brightness-110 active:scale-[0.98] text-on-primary rounded-xl text-xs font-semibold shadow-md shadow-primary-strong/25 flex items-center gap-1.5 transition-all cursor-pointer inner-top-glow"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Tác tử Mới</span>
@@ -103,28 +103,28 @@ export const AgentsHubView = ({
                         {getAgentIcon(agent.id)}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-zinc-100 group-hover:text-indigo-300 transition-colors">
+                        <h3 className="text-sm font-bold text-fg group-hover:text-primary-soft transition-colors">
                           {agent.name}
                         </h3>
-                        <span className="text-[10px] text-zinc-400 font-mono">
+                        <span className="text-[10px] text-fg-muted font-mono">
                           ID: {agent.id}
                         </span>
                       </div>
                     </div>
 
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.07] text-zinc-400 font-mono">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.07] text-fg-muted font-mono">
                       {agent.model}
                     </span>
                   </div>
 
                   {/* System Prompt Excerpt */}
-                  <p className="text-xs text-zinc-400 line-clamp-3 mb-4 leading-relaxed font-sans">
+                  <p className="text-xs text-fg-muted line-clamp-3 mb-4 leading-relaxed font-sans">
                     {agent.system_prompt.replace(/^(You are|Bạn là)\s*/i, '')}
                   </p>
 
                   {/* Skills / Tools Badges */}
                   <div className="mb-4">
-                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                    <span className="text-[10px] font-semibold text-fg-muted uppercase tracking-wider block mb-1.5">
                       Công cụ & Kỹ năng ({agent.tools.builtin.length})
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -149,15 +149,15 @@ export const AgentsHubView = ({
                 <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2">
                   <button
                     onClick={() => onOpenAgentDrawer(agent)}
-                    className="flex-1 py-1.5 px-3 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-zinc-100 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 border border-white/[0.06] transition-colors cursor-pointer"
+                    className="flex-1 py-1.5 px-3 bg-white/[0.04] hover:bg-white/[0.08] text-fg-muted hover:text-fg rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 border border-white/[0.06] transition-colors cursor-pointer"
                   >
-                    <Sliders className="w-3.5 h-3.5 text-zinc-400" />
+                    <Sliders className="w-3.5 h-3.5 text-fg-muted" />
                     <span>Cấu hình & Skills</span>
                   </button>
 
                   <button
                     onClick={() => onSelectAgentForChat(agent.id)}
-                    className="py-1.5 px-3.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer inner-top-glow"
+                    className="py-1.5 px-3.5 bg-primary hover:bg-primary-strong text-on-primary rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer inner-top-glow"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>Chat</span>

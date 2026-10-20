@@ -44,19 +44,19 @@ export const BenchmarkSpike = ({ onBackToChat }: BenchmarkSpikeProps) => {
   }, []);
 
   return (
-    <div className="flex h-full w-full bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden">
+    <div className="flex h-full w-full bg-zinc-950 text-fg font-sans select-none overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 bg-zinc-900 border-r border-zinc-800/80 flex flex-col justify-between shrink-0">
         <div>
           <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between">
             <button
               onClick={onBackToChat}
-              className="flex items-center gap-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-primary hover:text-primary-soft transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Quay lại Chat</span>
             </button>
-            <span className="text-[10px] bg-indigo-950/80 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded-full font-mono">
+            <span className="text-[10px] bg-primary/80 text-primary border border-primary/50 px-2 py-0.5 rounded-full font-mono">
               Gate 0
             </span>
           </div>
@@ -109,10 +109,10 @@ export const BenchmarkSpike = ({ onBackToChat }: BenchmarkSpikeProps) => {
           </nav>
         </div>
 
-        <div className="p-3 border-t border-zinc-800/80 text-[11px] text-zinc-400 space-y-1.5">
+        <div className="p-3 border-t border-zinc-800/80 text-[11px] text-fg-muted space-y-1.5">
           <div className="flex items-center justify-between">
             <span>Tauri Core:</span>
-            <span className="text-zinc-300 font-mono truncate max-w-[110px]">{healthStatus}</span>
+            <span className="text-fg-muted font-mono truncate max-w-[110px]">{healthStatus}</span>
           </div>
           {ipcLatency !== null && (
             <div className="flex items-center justify-between">
@@ -154,19 +154,19 @@ function OverviewTab({
   return (
     <div className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Kế hoạch Gate 0 Spike — Hubbub</h2>
-        <p className="text-sm text-zinc-400 mt-1">
+        <h2 className="text-2xl font-bold tracking-tight text-fg">Kế hoạch Gate 0 Spike — Hubbub</h2>
+        <p className="text-sm text-fg-muted mt-1">
           Xác thực hiệu năng, RAM và trải nghiệm gõ tiếng Việt trên nền Tauri 2 + WebView2 Windows.
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-          <div className="text-xs text-zinc-400 flex items-center gap-1.5 mb-1">
-            <Cpu className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="text-xs text-fg-muted flex items-center gap-1.5 mb-1">
+            <Cpu className="w-3.5 h-3.5 text-primary" />
             <span>Tauri Runtime</span>
           </div>
-          <div className="text-lg font-semibold text-zinc-100 font-mono">v{appVersion}</div>
+          <div className="text-lg font-semibold text-fg font-mono">v{appVersion}</div>
           <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>{healthStatus}</span>
@@ -174,25 +174,25 @@ function OverviewTab({
         </div>
 
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-          <div className="text-xs text-zinc-400 flex items-center gap-1.5 mb-1">
+          <div className="text-xs text-fg-muted flex items-center gap-1.5 mb-1">
             <Zap className="w-3.5 h-3.5 text-amber-400" />
             <span>IPC Latency</span>
           </div>
-          <div className="text-lg font-semibold text-zinc-100 font-mono">
+          <div className="text-lg font-semibold text-fg font-mono">
             {ipcLatency !== null ? `${ipcLatency} ms` : '—'}
           </div>
-          <div className="text-xs text-zinc-400 mt-1">Giao tiếp UI ↔ Rust Core</div>
+          <div className="text-xs text-fg-muted mt-1">Giao tiếp UI ↔ Rust Core</div>
         </div>
 
         <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-          <div className="text-xs text-zinc-400 flex items-center gap-1.5 mb-1">
+          <div className="text-xs text-fg-muted flex items-center gap-1.5 mb-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
             <span>Kết quả Gate 0</span>
           </div>
           <div className="text-lg font-semibold text-emerald-400 font-mono">
             5 / 5 ĐẠT (PASS)
           </div>
-          <div className="text-xs text-zinc-400 mt-1">Đã chốt kiến trúc Tauri 2</div>
+          <div className="text-xs text-fg-muted mt-1">Đã chốt kiến trúc Tauri 2</div>
         </div>
       </div>
     </div>
@@ -206,7 +206,7 @@ function VietnameseTab() {
 
   return (
     <div className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+      <h2 className="text-2xl font-bold tracking-tight text-fg flex items-center gap-2">
         <Type className="w-6 h-6 text-emerald-400" />
         Kiểm tra gõ Tiếng Việt trên Windows (UniKey / EVKey)
       </h2>
@@ -215,7 +215,7 @@ function VietnameseTab() {
           rows={6}
           value={multiInput}
           onChange={(e) => setMultiInput(e.target.value)}
-          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-hidden font-mono"
+          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-fg focus:outline-hidden font-mono"
         />
       </div>
     </div>
@@ -247,20 +247,20 @@ function StreamingTab() {
   return (
     <div className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+        <h2 className="text-2xl font-bold tracking-tight text-fg flex items-center gap-2">
           <Zap className="w-6 h-6 text-amber-400" />
           Mô phỏng Stream Token 50t/s
         </h2>
         <button
           onClick={startStream}
           disabled={isRunning}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium flex items-center gap-2"
+          className="px-4 py-2 bg-primary hover:bg-primary-strong text-on-primary rounded-lg text-xs font-medium flex items-center gap-2"
         >
           <Play className="w-3.5 h-3.5" /> Bắt đầu mô phỏng
         </button>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl min-h-[140px] text-xs leading-relaxed text-zinc-200">
+      <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl min-h-[140px] text-xs leading-relaxed text-fg">
         {text || 'Nhấn nút để bắt đầu mô phỏng stream...'}
       </div>
     </div>
@@ -272,7 +272,7 @@ function MilkdownTab() {
 
   return (
     <div className="flex-1 p-8 flex flex-col overflow-hidden max-w-4xl mx-auto w-full">
-      <h2 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2 mb-4 shrink-0">
+      <h2 className="text-2xl font-bold tracking-tight text-fg flex items-center gap-2 mb-4 shrink-0">
         <FileText className="w-6 h-6 text-purple-400" />
         Milkdown WYSIWYG Editor
       </h2>
@@ -286,13 +286,13 @@ function MilkdownTab() {
 function ScorecardTab() {
   return (
     <div className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+      <h2 className="text-2xl font-bold tracking-tight text-fg flex items-center gap-2">
         <CheckCircle2 className="w-6 h-6 text-teal-400" />
         Bảng Điểm Nghiệm Thu Gate 0
       </h2>
       <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl space-y-3">
-        <div className="text-sm font-semibold text-zinc-200">Trạng thái: 5/5 tiêu chí ĐẠT</div>
-        <p className="text-xs text-zinc-400">
+        <div className="text-sm font-semibold text-fg">Trạng thái: 5/5 tiêu chí ĐẠT</div>
+        <p className="text-xs text-fg-muted">
           Kết quả thực tế: Hubbub Rust Core tiêu tốn ~3.2MB RAM, tổng ứng dụng trên Windows ~180MB RAM, gõ tiếng Việt hoàn hảo và ảo hóa mượt mà 1.000 tin nhắn.
         </p>
       </div>
@@ -319,7 +319,7 @@ function NavItem({
     <button
       onClick={onClick}
       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-        active ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+        active ? 'bg-zinc-800 text-fg shadow-sm' : 'text-fg-muted hover:bg-zinc-800/50 hover:text-fg'
       }`}
     >
       <div className="flex items-center gap-2.5 truncate">

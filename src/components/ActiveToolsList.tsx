@@ -17,7 +17,7 @@ export const ActiveToolsList = ({ tools }: ActiveToolsListProps) => {
         >
           <div className="flex items-center gap-2">
             {tool.status === 'running' && (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400 shrink-0" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
             )}
             {tool.status === 'completed' && (
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -25,9 +25,9 @@ export const ActiveToolsList = ({ tools }: ActiveToolsListProps) => {
             {tool.status === 'failed' && (
               <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
             )}
-            <span className="text-zinc-200 font-medium">{tool.name}</span>
+            <span className="text-fg font-medium">{tool.name}</span>
           </div>
-          <span className="text-zinc-400 truncate max-w-xs text-[10px]">
+          <span className="text-fg-muted truncate max-w-xs text-[10px]">
             {tool.summary || tool.preview}
           </span>
         </div>

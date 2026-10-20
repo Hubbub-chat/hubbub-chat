@@ -121,17 +121,17 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/[0.07] bg-[#121622]/80">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
               <Key className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-semibold text-zinc-100">Cấu hình Nhà Cung Cấp & API Keys</h2>
-              <p className="text-xs text-zinc-400">Bảo vệ qua Windows Credential Manager — không lưu plaintext</p>
+              <h2 className="text-sm sm:text-base font-semibold text-fg">Cấu hình Nhà Cung Cấp & API Keys</h2>
+              <p className="text-xs text-fg-muted">Bảo vệ qua Windows Credential Manager — không lưu plaintext</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-200 p-1.5 rounded-xl hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="text-fg-muted hover:text-fg p-1.5 rounded-xl hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -155,7 +155,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               <div key={p.id} className="p-3.5 bg-[#121622]/60 border border-white/[0.06] rounded-xl hover:border-white/[0.1] transition-all">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-zinc-200">{p.name}</span>
+                    <span className="text-sm font-semibold text-fg">{p.name}</span>
                     {p.isLocal ? (
                       <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">
                         Cục bộ
@@ -172,7 +172,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </div>
                 </div>
 
-                <p className="text-xs text-zinc-400 mb-3">{p.description}</p>
+                <p className="text-xs text-fg-muted mb-3">{p.description}</p>
 
                 {!p.isLocal && (
                   <div className="flex items-center gap-2">
@@ -183,13 +183,13 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                       onChange={(e) =>
                         setInputKeys((prev) => ({ ...prev, [p.id]: e.target.value }))
                       }
-                      className="flex-1 bg-[#080a10] border border-white/[0.08] focus:border-indigo-500/60 rounded-xl px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-hidden font-mono"
+                      className="flex-1 bg-[#080a10] border border-white/[0.08] focus:border-primary/60 rounded-xl px-3 py-2 text-xs text-fg placeholder:text-fg-subtle focus:outline-hidden font-mono"
                     />
 
                     <button
                       onClick={() => handleSaveKey(p.id)}
                       disabled={isBusy || !inputKeys[p.id]?.trim()}
-                      className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-40 text-white rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer inner-top-glow"
+                      className="px-3.5 py-2 bg-primary hover:bg-primary-strong disabled:opacity-40 text-on-primary rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer inner-top-glow"
                     >
                       {isBusy ? (
                         <>
@@ -204,7 +204,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                       <button
                         onClick={() => handleDeleteKey(p.id)}
                         title="Xóa khóa bí mật này khỏi OS Keyring"
-                        className="p-2 border border-white/[0.08] hover:border-red-900/60 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 rounded-xl text-xs transition-colors shrink-0 cursor-pointer"
+                        className="p-2 border border-white/[0.08] hover:border-red-900/60 hover:bg-red-500/10 text-fg-muted hover:text-red-400 rounded-xl text-xs transition-colors shrink-0 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -217,11 +217,11 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-white/[0.07] bg-[#121622]/90 flex items-center justify-between text-xs text-zinc-400">
+        <div className="p-3.5 sm:p-4 border-t border-white/[0.07] bg-[#121622]/90 flex items-center justify-between text-xs text-fg-muted">
           <span className="text-[11px] truncate max-w-sm">Khóa API được mã hóa an toàn ở cấp hệ điều hành (OS Keyring).</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 rounded-xl font-medium transition-colors cursor-pointer"
+            className="px-4 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-fg rounded-xl font-medium transition-colors cursor-pointer"
           >
             Đóng
           </button>

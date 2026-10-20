@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { ActivityDock, type MainNavView } from './components/ActivityDock';
 import { Sidebar } from './components/Sidebar';
 import { ChatView } from './components/ChatView';
 import { AgentsHubView } from './components/AgentsHubView';
+import { DocumentsPanel } from './components/DocumentsPanel';
 import { WorkspaceReportsView } from './components/WorkspaceReportsView';
 import { AgentSkillsDrawer } from './components/AgentSkillsDrawer';
 import { ModelQuotaModal } from './components/ModelQuotaModal';
@@ -41,6 +42,11 @@ export default function App() {
   const [isAgentModalOpen, setIsAgentModalOpen] = useState<boolean>(false);
   const [isAgentDrawerOpen, setIsAgentDrawerOpen] = useState<boolean>(false);
   const [drawerAgent, setDrawerAgent] = useState<Agent | null>(null);
+  const [isDocsOpen, setIsDocsOpen] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1280 : true
+  );
+  const [docsRefreshKey, setDocsRefreshKey] = useState<number>(0);
+  const [workspaceInitialFile, setWorkspaceInitialFile] = useState<string | null>(null);
   const [showBenchmark, setShowBenchmark] = useState<boolean>(false);
   const [appVersion, setAppVersion] = useState<string>('0.1.0');
 
@@ -90,6 +96,7 @@ export default function App() {
       ]);
     }, []),
     onToolFinished: useCallback((toolName: string, success: boolean, summary: string) => {
+      if (toolName.startsWith('report_')) setDocsRefreshKey((k) => k + 1);
       setActiveTools((prev) =>
         prev.map((tool) =>
           tool.name === toolName && tool.status === 'running'
@@ -103,6 +110,7 @@ export default function App() {
       );
     }, []),
     onRunFinished: useCallback(() => {
+      setDocsRefreshKey((k) => k + 1);
       if (activeConversationIdRef.current) {
         loadMessages(activeConversationIdRef.current).finally(() => {
           setIsStreaming(false);
@@ -257,6 +265,7 @@ export default function App() {
   }, []);
 
   const handleSelectNavView = (view: MainNavView) => {
+    setWorkspaceInitialFile(null);
     if (view === 'quota') {
       setIsQuotaModalOpen(true);
       return;
@@ -264,19 +273,24 @@ export default function App() {
     setActiveNavView(view);
   };
 
+  const conversationRunIds = useMemo(
+    () => new Set(messages.map((m) => m.run_id).filter((id): id is string => !!id)),
+    [messages]
+  );
+
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const currentAgent = agents.find((a) => a.id === selectedAgentId) || agents[0] || null;
 
   if (showBenchmark) {
     return (
-      <div className="flex h-screen w-screen bg-[#08090d] text-zinc-100 font-sans select-none overflow-hidden">
+      <div className="flex h-screen w-screen bg-[#08090d] text-fg font-sans select-none overflow-hidden">
         <BenchmarkSpike onBackToChat={() => setShowBenchmark(false)} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-screen bg-[#08090d] text-zinc-100 font-sans select-none overflow-hidden">
+    <div className="flex h-screen w-screen bg-[#08090d] text-fg font-sans select-none overflow-hidden">
       {/* 1. Leftmost Activity Dock (56px) */}
       <ActivityDock
         activeView={activeNavView}
@@ -302,8 +316,9 @@ export default function App() {
       )}
 
       {/* 3. Main Workspace Area */}
-      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#08090d]">
+      <main className="flex-1 flex min-w-0 h-full overflow-hidden bg-[#08090d]">
         {activeNavView === 'chat' && (
+          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           <ChatView
             conversationId={activeConversationId || ''}
             conversationTitle={activeConversation?.title || 'Cuộc trò chuyện'}
@@ -324,6 +339,21 @@ export default function App() {
             onOpenQuotaModal={() => setIsQuotaModalOpen(true)}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+            isDocsOpen={isDocsOpen}
+            onToggleDocs={() => setIsDocsOpen((prev) => !prev)}
+          />
+          </div>
+        )}
+
+        {activeNavView === 'chat' && isDocsOpen && (
+          <DocumentsPanel
+            conversationRunIds={conversationRunIds}
+            refreshKey={docsRefreshKey}
+            onClose={() => setIsDocsOpen(false)}
+            onOpenInWorkspace={(path) => {
+              setWorkspaceInitialFile(path);
+              setActiveNavView('workspace');
+            }}
           />
         )}
 
@@ -343,7 +373,10 @@ export default function App() {
         )}
 
         {activeNavView === 'workspace' && (
-          <WorkspaceReportsView onBackToChat={() => setActiveNavView('chat')} />
+          <WorkspaceReportsView
+            onBackToChat={() => setActiveNavView('chat')}
+            initialFile={workspaceInitialFile}
+          />
         )}
       </main>
 

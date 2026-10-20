@@ -40,9 +40,9 @@ export const Sidebar = ({
   const getAgentIcon = (id: string) => {
     switch (id) {
       case 'analyst':
-        return <Sparkles className="w-3.5 h-3.5 text-indigo-400" />;
+        return <Sparkles className="w-3.5 h-3.5 text-primary" />;
       case 'developer':
-        return <Code2 className="w-3.5 h-3.5 text-cyan-400" />;
+        return <Code2 className="w-3.5 h-3.5 text-primary" />;
       case 'researcher':
         return <Search className="w-3.5 h-3.5 text-blue-400" />;
       case 'writer':
@@ -52,7 +52,7 @@ export const Sidebar = ({
       case 'librarian':
         return <BookOpen className="w-3.5 h-3.5 text-emerald-400" />;
       default:
-        return <Bot className="w-3.5 h-3.5 text-zinc-400" />;
+        return <Bot className="w-3.5 h-3.5 text-fg-muted" />;
     }
   };
 
@@ -102,7 +102,7 @@ export const Sidebar = ({
       <div className="p-3 pb-2 flex items-center gap-2">
         <button
           onClick={onNewConversation}
-          className="flex-1 py-2 px-3 bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 active:scale-[0.98] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-indigo-600/25 border border-indigo-400/20 transition-all cursor-pointer inner-top-glow"
+          className="flex-1 py-2 px-3 bg-primary hover:bg-primary-strong hover:brightness-110 active:scale-[0.98] text-on-primary rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-primary-strong/25 border border-primary/20 transition-all cursor-pointer inner-top-glow"
         >
           <Plus className="w-4 h-4" />
           <span>Cuộc trò chuyện mới</span>
@@ -111,7 +111,7 @@ export const Sidebar = ({
           <button
             onClick={onToggleCollapse}
             title="Thu gọn thanh bên"
-            className="p-2 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-transparent transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-fg-muted hover:text-fg hover:bg-white/[0.06] border border-transparent transition-colors cursor-pointer"
           >
             <PanelLeftClose className="w-4 h-4" />
           </button>
@@ -121,20 +121,20 @@ export const Sidebar = ({
       {/* Search Bar */}
       <div className="px-3 pb-2.5">
         <div className="relative flex items-center">
-          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-fg-muted absolute left-2.5 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm hội thoại..."
-            className="w-full bg-[#10131c] border border-white/[0.07] focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/20 rounded-xl pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden transition-all"
+            className="w-full bg-[#10131c] border border-white/[0.07] focus:border-primary/60 focus:ring-1 focus:ring-primary/20 rounded-xl pl-8 pr-3 py-1.5 text-xs text-fg placeholder:text-fg-muted focus:outline-hidden transition-all"
           />
         </div>
       </div>
 
       {/* Quick Agent Switcher Chips */}
       <div className="px-3 pb-2">
-        <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5 px-0.5">
+        <span className="text-[10px] font-semibold text-fg-muted uppercase tracking-wider block mb-1.5 px-0.5">
           Tác tử đang chọn
         </span>
         <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
@@ -147,8 +147,8 @@ export const Sidebar = ({
                 title={`${agent.name} (${agent.model})`}
                 className={`py-1 px-2.5 rounded-lg text-[11px] font-medium flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
                   active
-                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-xs'
-                    : 'bg-white/[0.04] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.08] border border-transparent'
+                    ? 'bg-primary-strong/20 text-primary-soft border border-primary/40 shadow-xs'
+                    : 'bg-white/[0.04] text-fg-muted hover:text-fg hover:bg-white/[0.08] border border-transparent'
                 }`}
               >
                 {getAgentIcon(agent.id)}
@@ -165,13 +165,13 @@ export const Sidebar = ({
       {/* Conversation List grouped by date */}
       <div className="flex-1 overflow-y-auto px-2 space-y-4 py-2 min-h-0">
         {filteredConversations.length === 0 ? (
-          <div className="p-4 text-center text-xs text-zinc-400">
+          <div className="p-4 text-center text-xs text-fg-muted">
             Không tìm thấy cuộc trò chuyện nào
           </div>
         ) : (
           groupedConversations.map((group) => (
             <div key={group.label} className="space-y-1">
-              <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider px-2 py-0.5 block">
+              <span className="text-[10px] font-semibold text-fg-muted uppercase tracking-wider px-2 py-0.5 block">
                 {group.label}
               </span>
               {group.list.map((conv) => {
@@ -182,13 +182,13 @@ export const Sidebar = ({
                     onClick={() => onSelectConversation(conv.id)}
                     className={`w-full p-2 rounded-xl text-xs flex items-center justify-between group transition-all text-left cursor-pointer ${
                       isActive
-                        ? 'bg-[#151926] text-zinc-100 border border-indigo-500/35 shadow-xs inner-top-glow'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05] border border-transparent'
+                        ? 'bg-[#151926] text-fg border border-primary/35 shadow-xs inner-top-glow'
+                        : 'text-fg-muted hover:text-fg hover:bg-white/[0.05] border border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <MessageSquare
-                        className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-300'}`}
+                        className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-primary' : 'text-fg-muted group-hover:text-fg'}`}
                       />
                       <span className="truncate font-medium">{conv.title || 'Cuộc trò chuyện'}</span>
                     </div>
