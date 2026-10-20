@@ -37,14 +37,12 @@ export const ActivityDock = ({
     <nav className="w-14 bg-[#07080c] border-r border-white/[0.06] flex flex-col items-center justify-between py-3.5 select-none shrink-0 z-30">
       {/* Top Branding Logo */}
       <div className="flex flex-col items-center gap-4 w-full">
-        <div
+        <img
+          src="/logo.png"
+          alt="Hubbub"
           title={`Hubbub Multi-Agent v${appVersion}`}
-          className="w-9 h-9 rounded-xl bg-primary p-0.5 flex items-center justify-center shadow-lg shadow-primary/25 cursor-default transition-transform hover:scale-105"
-        >
-          <div className="w-full h-full bg-[#090a0f] rounded-[10px] flex items-center justify-center font-bold text-primary text-sm tracking-tight">
-            H
-          </div>
-        </div>
+          className="w-9 h-9 rounded-xl shadow-lg shadow-primary/25 cursor-default transition-transform hover:scale-105"
+        />
 
         {/* Main Nav Items */}
         <div className="flex flex-col items-center gap-1.5 w-full px-2 mt-1">
